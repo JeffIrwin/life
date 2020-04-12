@@ -1,0 +1,12 @@
+
+# compiler output
+life.exe
+lifemod.mod
+
+# life runtime output
+frames/
+inputs/frames/
+
+# ffmpeg output
+*.mp4
+
