@@ -1,5 +1,7 @@
       ! TODO:
       !
+      !   - exit code for checking in test.sh
+      !
       !   - IO is very slow.  There is no point optimizing the grid
       !     update until better IO is found.
       !
