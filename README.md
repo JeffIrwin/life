@@ -15,3 +15,5 @@ Conway's game of life in Fortran
 
     ffmpeg -i ./frames/acorn_%d.pbm -c:v libx264 -pix_fmt yuv420p acorn-out-0.mp4
 
+## Sample output
+https://www.youtube.com/watch?v=2m9aPL1qjo0
