@@ -1,3 +1,4 @@
+![](https://github.com/JeffIrwin/life/workflows/CI/badge.svg)
 
 # life
 Conway's game of life in Fortran
