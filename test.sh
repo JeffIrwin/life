@@ -18,6 +18,12 @@ chmod +x ./build.sh
 
 pwd=$(pwd)
 
+if [[ $machine == "Linux" || $machine == "Mac" ]]; then
+	life=life
+else
+	life=life.exe
+fi
+
 echo "==============================================================================="
 echo ""
 echo "Running tests..."
@@ -48,7 +54,7 @@ for i in ./inputs/*.inp; do
 	ntotal=$((ntotal + 1))
 	rm "$p02"
 	rm "$p10"
-	${pwd}/life.exe < "$ib"
+	${pwd}/${life} < "$ib"
 
 	if [[ "$?" != "0" ]]; then
 		nfail=$((nfail + 1))
