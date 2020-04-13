@@ -10,8 +10,12 @@ case "${unameOut}" in
 esac
 echo ${machine}
 
+chmod +x ./clean.sh
+chmod +x ./build.sh
+
 ./clean.sh
 ./build.sh
+
 pwd=$(pwd)
 
 echo "==============================================================================="
