@@ -27,7 +27,7 @@ The order of the lines matters, and only end-of-line comments work after the exp
 
 Several seed formats are supported, including the popular run-length encoded `.rle` format, many examples of which can be found on https://www.conwaylife.com/forums
 
-Two different plain-text formats with the seed in a matrix of characters are supported.  See for example [bunnies.cells](inputs/bunnies.cells) or [glider.txt](inputs/glider.txt).
+Two different plain-text formats with the seed in a matrix of characters are supported.  See for example [bunnies.cells](inputs/bunnies.cells) or [factory.txt](inputs/factory.txt).
 
 ## Stitch image frames into a video
 Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `inputs` directory:
