@@ -2,8 +2,11 @@
       !
       !   - exit code for checking in test.sh
       !
+      !   - optional number of pixels per cell
+      !
       !   - IO is very slow.  There is no point optimizing the grid
       !     update until better IO is found.
+      !       * binary pbm output, c.f. mandelbrotZoom
       !
       !   - for seeds with escaped gliders and many generations, IO may
       !     not be the limiting factor
