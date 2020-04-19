@@ -19,13 +19,11 @@ set(CMAKE_Fortran_COMPILER "gfortran")
 
 project(${PROJECT} Fortran)
 
-set(SUBMODULE_DIR submodules)
+#set(PNMIO pnmio)
+#add_subdirectory(${PNMIO})
 
-set(PNMIO pnmio)
-add_subdirectory(${SUBMODULE_DIR}/${PNMIO})
+add_executable(${PROJECT} life.f ${PNMIO})
 
-add_executable(${PROJECT} life.f)
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${PNMIO})
-target_link_libraries(${PROJECT} ${PNMIO})
+#include_directories(${CMAKE_CURRENT_BINARY_DIR}/${PNMIO})
+#target_link_libraries(${PROJECT} ${PNMIO})
 
