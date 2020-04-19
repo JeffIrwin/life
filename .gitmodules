@@ -1,0 +1,3 @@
+[submodule "submodules/pnmio"]
+	path = submodules/pnmio
+	url = https://github.com/JeffIrwin/pnmio
