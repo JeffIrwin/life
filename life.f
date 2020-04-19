@@ -397,7 +397,7 @@
       character, allocatable :: b(:,:)
 
       integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24,
-     &           tmp, n1l, n2l, n3l, n4l, frm, io
+     &           frm, io, i0, i1
 
       logical :: tran, invert
       logical*1, allocatable :: g(:,:)
@@ -413,57 +413,45 @@
       jl = lbound(g, 2)
       ju = ubound(g, 2)
 
-      if (tran) then
-
-        n1l = n2
-        n2l = n1
-        n3l = n4
-        n4l = n3
-
-        tmp = il
-        il = jl
-        jl = tmp
-
-        tmp = iu
-        iu = ju
-        ju = tmp
-
-      else
-
-        n1l = n1
-        n2l = n2
-        n3l = n3
-        n4l = n4
-
-      end if
-
       frm = 1  ! TODO:  4 for binary
-      allocate(b(n4 - n2, n3 - n1))
+      allocate(b(n4 - n2 + 1, n3 - n1 + 1))
 
       if (invert) then
-        c0 = '1'
-        c1 = '0'
+        i0 = 1
+        i1 = 0
       else
-        c0 = '0'
-        c1 = '1'
+        i0 = 0
+        i1 = 1
       end if
+      c0 = achar(i0)
+      c1 = achar(i1)
+
       b = c1
 
       if (tran) then
-        do i = max(il, n1), min(iu, n3)
-          do j = max(jl, n2), min(ju, n4)
-            if (g(j, i)) b(j, n4 - i + 1) = c0
+
+        do i = max(n1, jl), min(n3, ju)
+          do j = max(n2, il), min(n4, iu)
+            if (g(j,i)) then
+              b(j-n2+1, n3-i+1) = c0
+            end if
           end do
         end do
+
       else
-        do i = max(il, n1), min(iu, n3)
-          do j = max(jl, n2), min(ju, n4)
-            if (g(i, j)) b(j, n4 - i + 1) = c0
+
+        do i = max(n1, il), min(n3, iu)
+          do j = max(n2, jl), min(n4, ju)
+            if (g(i,j)) then
+             !b(j-n2+1, i-n1+1) = c0
+              b(j-n2+1, n3-i+1) = c0
+            end if
           end do
         end do
+
       end if
 
-      io = writepnm(frm, b, filename)
+      io = writepnm(frm, b, filename, .false.)
       if (io /= 0) stop
 
       end subroutine writelifepnm
@@ -636,7 +624,7 @@
 
       if (writeout) then
         write(cn, '(i0)') n
-        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)//'.pbm'
+        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
         call writelifepnm(fres, g, n1, n2, n3, n4, tran, invert)
       end if
 
@@ -743,7 +731,7 @@
         if (.not. fexist) call system('mkdir '//trim(frames))
 
         write(cn, '(i0)') 0
-        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)//'.pbm'
+        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
 
         inquire(file = fres, exist = fexist)
         if (fexist) then
