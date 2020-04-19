@@ -22,6 +22,8 @@
 
       module lifemod
 
+      use pnmio
+
       implicit none
 
       contains
@@ -389,12 +391,13 @@
 
       ! Could also add fliplr and flipud options.
 
-      subroutine writepbm(filename, g, n1, n2, n3, n4, tran, invert)
+      subroutine writelifepnm(filename, g, n1, n2, n3, n4, tran, invert)
 
-      character :: c, filename*(*), c1, c0
+      character :: filename*(*), c1, c0
+      character, allocatable :: b(:,:)
 
-      integer :: i, j, ifile, il, iu, jl, ju, n1, n2, n3, n4, n13, n24,
-     &           tmp, n1l, n2l, n3l, n4l
+      integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24,
+     &           frm, io, i0, i1
 
       logical :: tran, invert
       logical*1, allocatable :: g(:,:)
@@ -410,88 +413,48 @@
       jl = lbound(g, 2)
       ju = ubound(g, 2)
 
-      if (tran) then
-
-        n1l = n2
-        n2l = n1
-        n3l = n4
-        n4l = n3
-
-        tmp = il
-        il = jl
-        jl = tmp
-
-        tmp = iu
-        iu = ju
-        ju = tmp
-
-      else
-
-        n1l = n1
-        n2l = n2
-        n3l = n3
-        n4l = n4
-
-      end if
-
-      open(newunit = ifile, file = filename)
-      write(ifile, '(a)') 'P1'
-      write(ifile, '(i0, a, i0)') n4 - n2 + 1, ' ', n3 - n1 + 1
+      frm = 1  ! TODO:  4 for binary
+      allocate(b(n4 - n2 + 1, n3 - n1 + 1))
 
       if (invert) then
-        c0 = '1'
-        c1 = '0'
+        i0 = 1
+        i1 = 0
       else
-        c0 = '0'
-        c1 = '1'
+        i0 = 0
+        i1 = 1
+      end if
+      c0 = achar(i0)
+      c1 = achar(i1)
+
+      b = c1
+
+      if (tran) then
+
+        do i = max(n1, jl), min(n3, ju)
+          do j = max(n2, il), min(n4, iu)
+            if (g(j,i)) then
+              b(j-n2+1, n3-i+1) = c0
+            end if
+          end do
+        end do
+
+      else
+
+        do i = max(n1, il), min(n3, iu)
+          do j = max(n2, jl), min(n4, ju)
+            if (g(i,j)) then
+             !b(j-n2+1, i-n1+1) = c0
+              b(j-n2+1, n3-i+1) = c0
+            end if
+          end do
+        end do
+
       end if
 
-      ! Top padding
-      do i = n1, il - 1
-        do j = n2, n4
-          write(ifile, '(a)', advance = 'no') c1//' '
-        end do
-        write(ifile,*)
-      end do
+      io = writepnm(frm, b, filename, .false.)
+      if (io /= 0) stop
 
-      do i = max(il, n1), min(iu, n3)
-
-        ! Left padding
-        do j = n2, jl - 1
-          write(ifile, '(a)', advance = 'no') c1//' '
-        end do
-
-        ! Main body
-        do j = max(jl, n2), min(ju, n4)
-
-          c = c1
-          if (tran) then
-            if (g(j, i)) c = c0
-          else
-            if (g(i, j)) c = c0
-          end if
-          write(ifile, '(a)', advance = 'no') c//' '
-
-        end do
-
-        ! Right padding
-        do j = ju + 1, n4
-          write(ifile, '(a)', advance = 'no') c1//' '
-        end do
-        write(ifile,*)
-      end do
-
-      ! Bottom padding
-      do i = iu + 1, n3
-        do j = n2, n4
-          write(ifile, '(a)', advance = 'no') c1//' '
-        end do
-        write(ifile,*)
-      end do
-
-      close(ifile)
-
-      end subroutine writepbm
+      end subroutine writelifepnm
 
 !=======================================================================
 
@@ -661,8 +624,8 @@
 
       if (writeout) then
         write(cn, '(i0)') n
-        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)//'.pbm'
-        call writepbm(fres, g, n1, n2, n3, n4, tran, invert)
+        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
+        call writelifepnm(fres, g, n1, n2, n3, n4, tran, invert)
       end if
 
       end subroutine nextgen
@@ -701,7 +664,7 @@
      &           n1, n2, n3, n4, ifile
 
       logical :: writeout, dead, fexist, tran, invert
-      logical*1, allocatable :: g(:,:), g0(:,:), g1(:,:), g2(:,:)
+      logical*1, allocatable :: g(:,:), g0(:,:)
 
       write(*,*)
       write(*,*) 'Enter seed grid file name:'
@@ -768,7 +731,7 @@
         if (.not. fexist) call system('mkdir '//trim(frames))
 
         write(cn, '(i0)') 0
-        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)//'.pbm'
+        fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
 
         inquire(file = fres, exist = fexist)
         if (fexist) then
@@ -788,7 +751,7 @@
         invert = .false.
         if (ans == 'y') invert = .true.
 
-        call writepbm(fres, g, n1, n2, n3, n4, tran, invert)
+        call writelifepnm(fres, g, n1, n2, n3, n4, tran, invert)
 
       end if
 

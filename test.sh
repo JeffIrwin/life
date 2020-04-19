@@ -64,15 +64,23 @@ for i in ./inputs/*.inp; do
 	popd
 
 	diff ./inputs/expected-output/$(basename $p02) ./inputs/$p02 > /dev/null
-	if [[ "$?" == "1" ]]; then
+	diffout=$?
+	if [[ "$diffout" == "1" ]]; then
 		nfail=$((nfail + 1))
 		echo "test.sh:  error:  difference in $i"
+	elif [[ "$diffout" != "0" ]]; then
+		nfail=$((nfail + 1))
+		echo "test.sh:  error:  cannot run diff in $i"
 	else
 
 		diff ./inputs/expected-output/$(basename $p10) ./inputs/$p10 > /dev/null
-		if [[ "$?" == "1" ]]; then
+		diffout=$?
+		if [[ "$diffout" == "1" ]]; then
 			nfail=$((nfail + 1))
 			echo "test.sh:  error:  difference in $i"
+		elif [[ "$diffout" != "0" ]]; then
+			nfail=$((nfail + 1))
+			echo "test.sh:  error:  cannot run diff in $i"
 		fi
 
 	fi
