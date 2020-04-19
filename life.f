@@ -772,6 +772,7 @@
 
         inquire(file = fres, exist = fexist)
         if (fexist) then
+          ! TODO:  native Windows
           call system('rm '//trim(frames)//'/'//trim(filepre)//'_*')
         end if
 

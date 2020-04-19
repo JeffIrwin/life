@@ -19,9 +19,9 @@ chmod +x ./build.sh
 pwd=$(pwd)
 
 if [[ $machine == "Linux" || $machine == "Mac" ]]; then
-	life=life
+	life=./target/life
 else
-	life=life.exe
+	life=./target/life.exe
 fi
 
 echo "==============================================================================="

@@ -1,7 +1,6 @@
 
 # compiler output
-life.exe
-lifemod.mod
+target/
 
 # life runtime output
 frames/
@@ -9,4 +8,6 @@ inputs/frames/
 
 # ffmpeg output
 *.mp4
+
+scratch/
 

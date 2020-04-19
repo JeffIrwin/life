@@ -1,5 +1,4 @@
 #!/bin/bash
 
-rm life.exe
-rm lifemod.mod
+rm -rf target
 
