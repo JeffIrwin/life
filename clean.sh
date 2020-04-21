@@ -1,6 +1,4 @@
 #!/bin/bash
 
-source constants.sh
-
-rm -rf "$build"
+source ./bat/clean.sh
 
