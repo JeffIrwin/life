@@ -390,7 +390,7 @@
       integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24,
      &           frm, io, i0, i1, ii, jj, j8
 
-      logical, parameter :: ascii = .true.
+      logical, parameter :: ascii = .false.
       logical, intent(in) :: tran, invert
       logical*1, allocatable :: g(:,:)
 
@@ -443,7 +443,7 @@
         ii = n3 - i + 1
         do j = max(n2, jl), min(n4, ju)
           if (((.not. tran) .and. g(i,j))
-     &         .or. (tran  .and.  g(j,i))) then
+     &         .or.  (tran  .and. g(j,i))) then
             j8 = j - n2 + 1
 
             if (ascii) then
