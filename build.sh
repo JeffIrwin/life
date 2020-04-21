@@ -1,16 +1,9 @@
 #!/bin/bash
 
 io=0
-
-unameOut="$(uname -s)"
-case "${unameOut}" in
-    Linux*)     machine=Linux;;
-    Darwin*)    machine=Mac;;
-    CYGWIN*)    machine=Cygwin;;
-    MINGW*)     machine=MinGw;;
-    *)          machine="UNKNOWN:${unameOut}"
-esac
-echo ${machine}
+this=$(basename ${BASH_SOURCE[0]})
+source constants.sh
+source os.sh
 
 BTYPE=Release
 
@@ -27,9 +20,8 @@ for arg in "$@" ; do
 done
 
 echo "Using build type $BTYPE"
-TARGET=target
-mkdir -p $TARGET
-pushd $TARGET
+mkdir -p "$build"
+pushd "$build"
 
 #which gfortran
 
@@ -47,7 +39,7 @@ fi
 
 "$CMAKE" --build . --config $BTYPE || io=-1
 
-# from TARGET
+# from build
 popd
 
 exit $io

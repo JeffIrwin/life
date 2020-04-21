@@ -1,4 +1,6 @@
 #!/bin/bash
 
-rm -rf target
+source constants.sh
+
+rm -rf "$build"
 

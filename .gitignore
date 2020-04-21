@@ -1,6 +1,6 @@
 
 # compiler output
-target/
+build/
 
 # life runtime output
 frames/

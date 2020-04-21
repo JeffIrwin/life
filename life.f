@@ -419,7 +419,8 @@
 
       else
 
-        ! binary
+        ! Binary:  pack 8 B&W pixel bits into a 1 byte character.
+        ! Only the horizontal dimension is padded.
         frm = 4
         allocate(b(ceiling((n4 - n2 + 1) / 8.d0), n3 - n1 + 1))
 
@@ -428,11 +429,11 @@
       if (invert) then
         i0 = 1
         i1 = 0
-        if (.not. ascii) b = achar(0)
+        if (.not. ascii) b = achar(0)      ! 00000000
       else
         i0 = 0
         i1 = 1
-        if (.not. ascii) b = achar(255)
+        if (.not. ascii) b = achar(z'ff')  ! 11111111
       end if
       c0 = achar(i0)
       c1 = achar(i1)
@@ -450,7 +451,14 @@
               b(j8, ii) = c0
             else
 
+              ! j8 is the bitwise index and jj is the bytewise index.
+              ! Use mod(j8,8) to get the endian-flipped index of the bit
+              ! within the byte to be set or cleared.  ichar(.,1) casts
+              ! a character to a 1-byte int, and achar casts the int
+              ! back to a character.
+
               jj = j8 / 8
+
               if (invert) then
                 b(jj,ii)
      &              = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
@@ -479,7 +487,7 @@
 
       integer :: i, j, ifile, il, iu, jl, ju, tmp, is, js
 
-      logical :: flipud, fliplr
+      logical, intent(in) :: flipud, fliplr
       logical*1, allocatable :: g(:,:)
 
       il = lbound(g, 1)
@@ -552,7 +560,8 @@
      &           nimax0, njmin0, njmax0, nbrs, niminmin, nimaxmax,
      &           njminmin, njmaxmax, n1, n2, n3, n4
 
-      logical :: writeout, dead, tran, invert
+      logical, intent(inout) :: dead
+      logical, intent(in) :: writeout, tran, invert
       logical*1, allocatable :: g(:,:), g0(:,:)
 
       ! Trim or extend the grid.

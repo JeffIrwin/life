@@ -13,16 +13,8 @@ outputext=pbm
 #===============================================================================
 
 this=$(basename ${BASH_SOURCE[0]})
-
-unameOut="$(uname -s)"
-case "${unameOut}" in
-    Linux*)     machine=Linux;;
-    Darwin*)    machine=Mac;;
-    CYGWIN*)    machine=Cygwin;;
-    MINGW*)     machine=MinGw;;
-    *)          machine="UNKNOWN:${unameOut}"
-esac
-echo "$this:  machine = ${machine}"
+source constants.sh
+source os.sh
 
 dirty="false"
 for arg in "$@" ; do
@@ -50,9 +42,9 @@ fi
 pwd=$(pwd)
 
 if [[ $machine == "Linux" || $machine == "Mac" ]]; then
-	exe=./target/$exebase
+	exe="./$build/$exebase"
 else
-	exe=./target/$exebase.exe
+	exe="./$build/$exebase.exe"
 fi
 
 if [[ ! -e "$exe" ]]; then
@@ -132,6 +124,7 @@ done
 echo ""
 echo "==============================================================================="
 echo ""
+
 echo "$this:  total tested frames     = $ntotalframes"
 echo "$this:  total number of tests   = $ntotal"
 echo "$this:  number of failed frames = $nfailframes"
