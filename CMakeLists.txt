@@ -3,21 +3,9 @@ cmake_minimum_required(VERSION 3.7)
 
 set(PROJECT life)
 
-if (LINUX)
-	set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp")
-	set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
-	set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
-elseif (APPLE)
-	# TODO:  remove conditions if this works on all OSs.
-	set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp")
-	set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
-	set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
-else()
-	# Windows
-	set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp")
-	set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
-	set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
-endif()
+set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp")
+set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 
 set(CMAKE_Fortran_COMPILER "gfortran")
 

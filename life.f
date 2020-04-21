@@ -2,19 +2,12 @@
       !
       !   - optional number of pixels per cell
       !
-      !   - IO is very slow.  There is no point optimizing the grid
-      !     update until better IO is found.
-      !       * binary pbm output, c.f. mandelbrotZoom
-      !
-      !   - for seeds with escaped gliders and many generations, IO may
-      !     not be the limiting factor
+      !   - use logic such that if a point and its neighbors do not
+      !     change, don't check it in next frame
       !
       !   - avoid using min and max; instead, write special cases for
       !     bottom-most, top-most, left-most, and right-most
       !     rows/columns
-      !
-      !   - use logic such that if a point and its neighbors do not
-      !     change, don't check it in next frame
       !
       !   - parallelism does not seem to help for small grids
 
@@ -395,9 +388,10 @@
       character, allocatable :: b(:,:)
 
       integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24,
-     &           frm, io, i0, i1
+     &           frm, io, i0, i1, ii, jj, j8
 
-      logical :: tran, invert
+      logical, parameter :: ascii = .true.
+      logical, intent(in) :: tran, invert
       logical*1, allocatable :: g(:,:)
 
       ! FFMPEG requires dimensions in multiples of 2.
@@ -406,47 +400,69 @@
       if (mod(n13, 2) == 0) n3 = n3 + 1
       if (mod(n24, 2) == 0) n4 = n4 + 1
 
-      il = lbound(g, 1)
-      iu = ubound(g, 1)
-      jl = lbound(g, 2)
-      ju = ubound(g, 2)
+      if (tran) then
+        il = lbound(g, 2)
+        iu = ubound(g, 2)
+        jl = lbound(g, 1)
+        ju = ubound(g, 1)
+      else
+        il = lbound(g, 1)
+        iu = ubound(g, 1)
+        jl = lbound(g, 2)
+        ju = ubound(g, 2)
+      end if
 
-      frm = 1  ! TODO:  4 for binary
-      allocate(b(n4 - n2 + 1, n3 - n1 + 1))
+      if (ascii) then
+
+        frm = 1
+        allocate(b(n4 - n2 + 1, n3 - n1 + 1))
+
+      else
+
+        ! binary
+        frm = 4
+        allocate(b(ceiling((n4 - n2 + 1) / 8.d0), n3 - n1 + 1))
+
+      end if
 
       if (invert) then
         i0 = 1
         i1 = 0
+        if (.not. ascii) b = achar(0)
       else
         i0 = 0
         i1 = 1
+        if (.not. ascii) b = achar(255)
       end if
       c0 = achar(i0)
       c1 = achar(i1)
 
-      b = c1
+      if (ascii) b = c1
 
-      if (tran) then
+      do i = max(n1, il), min(n3, iu)
+        ii = n3 - i + 1
+        do j = max(n2, jl), min(n4, ju)
+          if (((.not. tran) .and. g(i,j))
+     &         .or. (tran  .and.  g(j,i))) then
+            j8 = j - n2 + 1
 
-        do i = max(n1, jl), min(n3, ju)
-          do j = max(n2, il), min(n4, iu)
-            if (g(j,i)) then
-              b(j-n2+1, n3-i+1) = c0
+            if (ascii) then
+              b(j8, ii) = c0
+            else
+
+              jj = j8 / 8
+              if (invert) then
+                b(jj,ii)
+     &              = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+              else
+                b(jj,ii)
+     &              = achar(ibclr(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+              end if
+
             end if
-          end do
+          end if
         end do
-
-      else
-
-        do i = max(n1, il), min(n3, iu)
-          do j = max(n2, jl), min(n4, ju)
-            if (g(i,j)) then
-              b(j-n2+1, n3-i+1) = c0
-            end if
-          end do
-        end do
-
-      end if
+      end do
 
       io = writepnm(frm, b, filename, .false.)
       if (io /= 0) call exit(-6)
