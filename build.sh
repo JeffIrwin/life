@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source ./bat/build.sh
+source ./submodules/bat/build.sh
 

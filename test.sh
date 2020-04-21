@@ -12,6 +12,5 @@ outputext=pbm
 
 #===============================================================================
 
-source ./bat/test.sh
-echo "? = $?"
+source ./submodules/bat/test.sh
 

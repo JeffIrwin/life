@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source ./bat/clean.sh
+source ./submodules/bat/clean.sh
 
