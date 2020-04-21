@@ -1,0 +1,6 @@
+"catacryst.rle"       seed filename
+100                   number of generations
+y                     write results? (y/n)
+-20 -20 2600 1800     bounding box
+y                     transpose image frames? (y/n)
+y                     invert image B/W colors? (y/n)
