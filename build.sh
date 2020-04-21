@@ -1,5 +1,7 @@
 #!/bin/bash
 
+io=0
+
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     machine=Linux;;
@@ -29,7 +31,7 @@ TARGET=target
 mkdir -p $TARGET
 pushd $TARGET
 
-which gfortran
+#which gfortran
 
 if [[ -x "$(which cmake)" ]]; then
 	CMAKE=cmake
@@ -43,8 +45,10 @@ else
 	"$CMAKE" .. -DCMAKE_BUILD_TYPE=$BTYPE -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
 fi
 
-"$CMAKE" --build . --config $BTYPE
+"$CMAKE" --build . --config $BTYPE || io=-1
 
 # from TARGET
 popd
+
+exit $io
 

@@ -1,7 +1,5 @@
       ! TODO:
       !
-      !   - exit code for checking in test.sh
-      !
       !   - optional number of pixels per cell
       !
       !   - IO is very slow.  There is no point optimizing the grid
@@ -16,7 +14,7 @@
       !     rows/columns
       !
       !   - use logic such that if a point and its neighbors do not
-      !     change, stop checking it
+      !     change, don't check it in next frame
       !
       !   - parallelism does not seem to help for small grids
 
@@ -224,7 +222,7 @@
               write(*,*) 'Bad character '//c//' after runcount '
      &                   //line(k0: k1)
               write(*,*)
-              stop
+              call exit(-1)
             end if
           else if (c == 'b') then
             readrle(i, j) = .false.
@@ -242,7 +240,7 @@
             write(*,*) 'Error reading RLE file.'
             write(*,*) 'Bad character '//c//'.'
             write(*,*)
-            stop
+            call exit(-2)
           end if
         end do
       end do
@@ -280,7 +278,7 @@
         write(*,*) 'Too many columns in '//trim(filename)
         write(*,*) 'Increase line length and re-compile.'
         write(*,*)
-        stop
+        call exit(-3)
       end if
 
       rewind(ifile)
@@ -324,7 +322,7 @@
             write(*,*) 'Error reading input file '//trim(filename)
             write(*,*) 'Input grid must consist of .''s and O''s'
             write(*,*)
-            stop
+            call exit(-4)
           end if
         end do
       end do
@@ -363,7 +361,7 @@
             write(*,*) 'Error reading input file '//trim(filename)
             write(*,*) 'Input grid must consist of 0''s and 1''s'
             write(*,*)
-            stop
+            call exit(-5)
           end if
         end do
       end do
@@ -443,7 +441,6 @@
         do i = max(n1, il), min(n3, iu)
           do j = max(n2, jl), min(n4, ju)
             if (g(i,j)) then
-             !b(j-n2+1, i-n1+1) = c0
               b(j-n2+1, n3-i+1) = c0
             end if
           end do
@@ -452,7 +449,7 @@
       end if
 
       io = writepnm(frm, b, filename, .false.)
-      if (io /= 0) stop
+      if (io /= 0) call exit(-6)
 
       end subroutine writelifepnm
 
@@ -647,7 +644,7 @@
       !g(1:9, 1:36) = g1
       !g(82: 90, 99: 134) = g2
       !call writegrid('gosper_shootout.txt', g, .false., .false.)
-      !stop
+      !call exit(-7)
 
 !=======================================================================
 
@@ -676,7 +673,7 @@
         write(*,*) 'Error'
         write(*,*) 'Could not find file '//trim(filename)
         write(*,*)
-        stop
+        call exit(-8)
       end if
 
       j = len_trim(filename)
@@ -697,7 +694,7 @@
         write(*,*) 'Error'
         write(*,*) 'Unrecognized file format '//trim(filename)
         write(*,*)
-        stop
+        call exit(-9)
       end if
 
       write(*,*)
@@ -723,7 +720,7 @@
           write(*,*) 'Error'
           write(*,*) 'Bounding box must have positive area'
           write(*,*)
-          stop
+          call exit(-10)
         end if
 
         frames = 'frames'
@@ -758,7 +755,7 @@
       !call writegrid('cata.txt', g, .false., .false.)
       !call writegrid('catacryst.txt', g, .false., .false.)
       !call writerle('cata.rle', g)
-      !stop
+      !call exit(-11)
 
       niminmin = lbound(g, 1)
       njminmin = lbound(g, 2)
@@ -811,6 +808,11 @@
       write(*,*)
       write(*,*) 'lower bounds = ', niminmin, njminmin
       write(*,*) 'upper bounds = ', nimaxmax, njmaxmax
+      write(*,*)
+
+      call exit(0)
 
       end program life
+
+!=======================================================================
 

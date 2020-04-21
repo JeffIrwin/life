@@ -8,6 +8,10 @@ if (LINUX)
 	set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
 	set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 elseif (APPLE)
+	# TODO:  remove conditions if this works on all OSs.
+	set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp")
+	set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
+	set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 else()
 	# Windows
 	set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp")

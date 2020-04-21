@@ -1,5 +1,19 @@
 #!/bin/bash
 
+inputs=./inputs/*.inp
+#inputs=./inputs/factory.inp
+
+frames=( 2 10 99 )
+
+exebase=life
+outdir=./inputs/frames
+expectedoutdir=./inputs/expected-output
+outputext=pbm
+
+#===============================================================================
+
+this=$(basename ${BASH_SOURCE[0]})
+
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     machine=Linux;;
@@ -8,81 +22,109 @@ case "${unameOut}" in
     MINGW*)     machine=MinGw;;
     *)          machine="UNKNOWN:${unameOut}"
 esac
-echo ${machine}
+echo "$this:  machine = ${machine}"
 
-chmod +x ./clean.sh
+dirty="false"
+for arg in "$@" ; do
+	#echo $arg
+	if [[ "$arg" == "--dirty" || "$arg" == "-d" ]] ; then
+		dirty="true"
+	else
+		echo "$this:  warning:  unknown cmd argument '$arg'"
+		echo
+	fi
+done
+
+if [[ "$dirty" != "true" ]]; then
+	chmod +x ./clean.sh
+	./clean.sh
+fi
+
 chmod +x ./build.sh
-
-./clean.sh
 ./build.sh
+if [[ "$?" != "0" ]]; then
+	echo "$this:  error:  cannot build"
+	exit -1
+fi
 
 pwd=$(pwd)
 
 if [[ $machine == "Linux" || $machine == "Mac" ]]; then
-	life=./target/life
+	exe=./target/$exebase
 else
-	life=./target/life.exe
+	exe=./target/$exebase.exe
+fi
+
+if [[ ! -e "$exe" ]]; then
+	echo "$this:  error:  executable \"$exe\" does not exist"
+	exit -2
 fi
 
 echo "==============================================================================="
 echo ""
-echo "Running tests..."
+echo "$this:  running tests..."
 echo ""
 
 nfail=0
 ntotal=0
+nfailframes=0
+ntotalframes=0
 
-for i in ./inputs/*.inp; do
+for i in ${inputs}; do
 
 	d=$(dirname "$i")
-
 	ib=$(basename $i)
+	inputext=${ib##*.}
 
-	# Check two different frames
-	p02="frames/${ib%.inp}_2.pbm"
-	p10="frames/${ib%.inp}_10.pbm"
+	outputs=()
+	for frame in ${frames[@]}; do
+		# This makes an assumption about where the frame number is in the
+		# filename and how it is delimited.  For projects like fortfuck, check
+		# if frames is empty and don't use a delimiter.
+		outputs+=( "${outdir}/${ib%.${inputext}}_${frame}.${outputext}" )
+	done
 
 	#echo "i   = $i"
 	#echo "ib  = $ib"
-	#echo "p02 = $p02"
-	#echo "p10 = $p10"
 	#echo "d   = $d"
 	#echo ""
+
+	rm "${outputs[@]}"
 
 	pushd $d
 
 	ntotal=$((ntotal + 1))
-	rm "$p02"
-	rm "$p10"
-	${pwd}/${life} < "$ib"
+	failed="false"
 
+	"${pwd}/${exe}" < "$ib"
 	if [[ "$?" != "0" ]]; then
-		nfail=$((nfail + 1))
-		echo "test.sh:  error:  cannot run test $i"
+		failed="true"
+		echo "$this:  error:  cannot run test $i"
 	fi
 
 	popd
 
-	diff ./inputs/expected-output/$(basename $p02) ./inputs/$p02 > /dev/null
-	diffout=$?
-	if [[ "$diffout" == "1" ]]; then
-		nfail=$((nfail + 1))
-		echo "test.sh:  error:  difference in $i"
-	elif [[ "$diffout" != "0" ]]; then
-		nfail=$((nfail + 1))
-		echo "test.sh:  error:  cannot run diff in $i"
-	else
+	if [[ "$failed" != "true" ]]; then
+		for output in ${outputs[@]}; do
+			ntotalframes=$((ntotalframes + 1))
 
-		diff ./inputs/expected-output/$(basename $p10) ./inputs/$p10 > /dev/null
-		diffout=$?
-		if [[ "$diffout" == "1" ]]; then
-			nfail=$((nfail + 1))
-			echo "test.sh:  error:  difference in $i"
-		elif [[ "$diffout" != "0" ]]; then
-			nfail=$((nfail + 1))
-			echo "test.sh:  error:  cannot run diff in $i"
-		fi
+			diff "${expectedoutdir}/$(basename ${output})" "${output}" > /dev/null
+			diffout=$?
+			if [[ "$diffout" == "1" ]]; then
+				nfailframes=$((nfailframes + 1))
+				failed="true"
+				echo "$this:  error:  difference in ${output}"
+			elif [[ "$diffout" != "0" ]]; then
+				nfailframes=$((nfailframes + 1))
+				failed="true"
+				echo "$this:  error:  cannot run diff in ${output}"
+			fi
 
+		done
+	fi
+
+	if [[ "$failed" == "true" ]]; then
+		nfail=$((nfail + 1))
 	fi
 
 done
@@ -90,9 +132,17 @@ done
 echo ""
 echo "==============================================================================="
 echo ""
-echo "Total number of tests  = $ntotal"
-echo "Number of failed tests = $nfail"
-echo "Done!"
+echo "$this:  total tested frames     = $ntotalframes"
+echo "$this:  total number of tests   = $ntotal"
+echo "$this:  number of failed frames = $nfailframes"
+echo "$this:  number of failed tests  = $nfail"
+echo "$this:  done!"
 echo ""
 
+if [[ "$nfail" != "0" ]]; then
+	echo "$this:  error:  not all tests passed"
+fi
+
+# If a whole test fails to run, it won't count towards any failed frames
 exit $nfail
+
