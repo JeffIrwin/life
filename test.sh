@@ -108,7 +108,7 @@ for i in ${inputs}; do
 		for output in ${outputs[@]}; do
 			ntotalframes=$((ntotalframes + 1))
 
-			diff "${expectedoutdir}/$(basename ${output})" "${output}" > /dev/null
+			diff -w "${expectedoutdir}/$(basename ${output})" "${output}" > /dev/null
 			diffout=$?
 			if [[ "$diffout" == "1" ]]; then
 				nfailframes=$((nfailframes + 1))
