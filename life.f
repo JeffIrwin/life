@@ -800,30 +800,15 @@
 
 !=======================================================================
 
-      end module lifemod
+      subroutine live(settings, io)
 
-      !! Test writegrid
-      !filename = 'meth946.rle'
-      !g = readrle(filename)
-      !call writegrid('test_write.txt', g, .true., .false.)
-
-      !! Place two gosper glider guns facing each other.
-      !g1 = readtxt('gosper.txt')
-      !g2 = readtxt('gosper_fliplr_flipud.txt')
-      !allocate(g(90, 134))
-      !g(:,:) = .false.
-      !g(1:9, 1:36) = g1
-      !g(82: 90, 99: 134) = g2
-      !call writegrid('gosper_shootout.txt', g, .false., .false.)
-      !call exit(-7)
-
-!=======================================================================
-
-      program life
-
-      use lifemod
-
-      implicit none
+      ! Live, live is a verb
+      !
+      ! Live is a doing word
+      !
+      ! Fearless on my breath
+      !
+      ! Most faithful mirror
 
       character :: cn*256, ans, filepre*256, ext*32,
      &             fres*256, frames*256
@@ -835,13 +820,6 @@
       logical*1, allocatable :: g(:,:), g0(:,:)
 
       type(life_settings) :: settings
-
-      io = 0
-      call load_args(settings, io)
-      if (io /= 0) call exit(io)
-
-      call load_json(settings, io)
-      if (io /= 0) call exit(io)
 
       ! TODO:  resolve path to fseed (and "frames") relative to fjson
       inquire(file = settings%fseed, exist = fexist)
@@ -965,6 +943,48 @@
       write(*,*) 'lower bounds = ', niminmin, njminmin
       write(*,*) 'upper bounds = ', nimaxmax, njmaxmax
       write(*,*)
+
+      end subroutine live
+
+!=======================================================================
+
+      end module lifemod
+
+      !! Test writegrid
+      !filename = 'meth946.rle'
+      !g = readrle(filename)
+      !call writegrid('test_write.txt', g, .true., .false.)
+
+      !! Place two gosper glider guns facing each other.
+      !g1 = readtxt('gosper.txt')
+      !g2 = readtxt('gosper_fliplr_flipud.txt')
+      !allocate(g(90, 134))
+      !g(:,:) = .false.
+      !g(1:9, 1:36) = g1
+      !g(82: 90, 99: 134) = g2
+      !call writegrid('gosper_shootout.txt', g, .false., .false.)
+      !call exit(-7)
+
+!=======================================================================
+
+      program life
+
+      use lifemod
+
+      implicit none
+
+      integer :: io
+
+      type(life_settings) :: settings
+
+      io = 0
+      call load_args(settings, io)
+      if (io /= 0) call exit(io)
+
+      call load_json(settings, io)
+      if (io /= 0) call exit(io)
+
+      call live(settings, io)
 
       call exit(io)
 
