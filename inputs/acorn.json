@@ -1,0 +1,8 @@
+{
+	"Seed file": "acorn.rle",
+	"Frames"   : 100,
+	"Write"    : true,
+	"Bounds"   : [-150, -100, 150, 150],
+	"Transpose": false,
+	"Invert"   : false
+}

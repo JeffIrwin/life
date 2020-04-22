@@ -1,6 +1,0 @@
-"acorn.rle"           seed filename
-100                   number of generations
-y                     write results? (y/n)
--150 -100 150 150     bounding box
-n                     transpose image frames? (y/n)
-n                     invert image B/W colors? (y/n)

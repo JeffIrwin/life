@@ -1,0 +1,8 @@
+{
+	"Seed file": "bunnies.cells",
+	"Frames": 100,
+	"Write": true,
+	"Bounds": [-150, -190, 160, 130],
+	"Transpose": false,
+	"Invert": true
+}

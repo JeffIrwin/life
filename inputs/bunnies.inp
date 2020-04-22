@@ -1,6 +1,0 @@
-"bunnies.cells"      filename
-100                  number of generations
-y                    write results? (y/n)
--150 -190 160 130    bbox
-n                    transpose? (y/n)
-y                    invert? (y/n)

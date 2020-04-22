@@ -17,6 +17,19 @@
 
       implicit none
 
+      character, parameter :: tab = char(9)
+      character(len = *), parameter :: me = "life"
+
+      type life_settings
+
+        character(len = :), allocatable :: fjson, fseed
+
+        integer :: n, xmin, xmax, ymin, ymax
+
+        logical :: wrt, trans, invert
+
+      end type life_settings
+
       contains
 
 !=======================================================================
@@ -654,6 +667,139 @@
 
 !=======================================================================
 
+      integer function usage()
+
+      usage = -12
+
+      write(*,*) 'Error'
+      write(*,*) 'Usage:'
+      write(*,*) tab//me//' input.json'
+      write(*,*)
+
+      return
+
+      end function usage
+
+!=======================================================================
+
+      subroutine load_args(settings, io)
+
+      character :: argv*256
+
+      integer :: io, argc, i, ipos
+
+      logical :: ljson
+
+      type(life_settings) :: settings
+
+      argc = command_argument_count()
+      if (argc < 1) then
+        io = usage()
+        return
+      end if
+
+      ipos = 0
+      i = 0
+      do while (i < argc)
+        i = i + 1
+        call get_command_argument(i, argv)
+
+        ! Positional arguments
+        if (ipos == 0) then
+          ipos = ipos + 1
+          settings%fjson = trim(argv)
+        else
+          write(*,*) 'Warning:  unknown cmd argument '//trim(argv)
+          write(*,*)
+        end if
+
+      end do
+
+      end subroutine load_args
+
+!=======================================================================
+
+      subroutine load_json(settings, io)
+
+      use json_module
+
+      character(len = :), allocatable :: str
+
+      integer :: io, i
+
+      logical :: found, bool
+
+      type(json_file) :: json
+
+      type(life_settings) :: settings
+
+      io = -13
+      write(*,*) 'Loading json file "'//settings%fjson//'" ...'
+
+      ! Set defaults
+      settings%fseed = settings%fjson
+      i = scan(settings%fjson, '.', .true.)
+      if (i /= 0) then
+        settings%fseed = settings%fjson(1: i)//'rle'
+      else
+        settings%fseed = settings%fjson//'.rle'
+      end if
+
+      settings%n = 100
+
+      settings%xmin = -319
+      settings%xmax =  320
+      settings%ymin = -179
+      settings%ymax =  180
+
+      settings%wrt    = .true.
+      settings%trans  = .false.
+      settings%invert = .false.
+
+      call json%initialize()
+
+      call json%load(filename = settings%fjson)
+      if (json%failed()) then
+        write(*,*) 'Error'
+        write(*,*) 'Could not load file '//trim(settings%fjson)
+        write(*,*)
+        return
+      end if
+
+      call json%print()
+
+      call json%get('Seed file', str, found)
+      if (found) settings%fseed = str
+
+      call json%get('Frames', i, found)
+      if (found) settings%n = i
+
+      call json%get('Bounds[1]', i, found)
+      if (found) settings%xmin = i
+      call json%get('Bounds[2]', i, found)
+      if (found) settings%ymin = i
+      call json%get('Bounds[3]', i, found)
+      if (found) settings%xmax = i
+      call json%get('Bounds[4]', i, found)
+      if (found) settings%ymax = i
+
+      call json%get('Write', bool, found)
+      if (found) settings%wrt = bool
+
+      call json%get('Transpose', bool, found)
+      if (found) settings%trans = bool
+
+      call json%get('Invert', bool, found)
+      if (found) settings%invert = bool
+
+      call json%destroy()
+
+      io = 0
+
+      end subroutine load_json
+
+!=======================================================================
+
       end module lifemod
 
       !! Test writegrid
@@ -679,68 +825,59 @@
 
       implicit none
 
-      character :: filename*256, cn*256, ans, filepre*256, ext*32,
+      character :: cn*256, ans, filepre*256, ext*32,
      &             fres*256, frames*256
 
-      integer :: i, j, nmax, n, niminmin, nimaxmax, njminmin, njmaxmax,
-     &           n1, n2, n3, n4, ifile
+      integer :: i, j, n, niminmin, nimaxmax, njminmin, njmaxmax,
+     &           ifile, io
 
-      logical :: writeout, dead, fexist, tran, invert
+      logical :: dead, fexist
       logical*1, allocatable :: g(:,:), g0(:,:)
 
-      write(*,*)
-      write(*,*) 'Enter seed grid file name:'
-      read(*,*) filename
+      type(life_settings) :: settings
 
-      inquire(file = filename, exist = fexist)
+      io = 0
+      call load_args(settings, io)
+      if (io /= 0) call exit(io)
+
+      call load_json(settings, io)
+      if (io /= 0) call exit(io)
+
+      ! TODO:  resolve path to fseed (and "frames") relative to fjson
+      inquire(file = settings%fseed, exist = fexist)
       if (.not. fexist) then
         write(*,*)
         write(*,*) 'Error'
-        write(*,*) 'Could not find file '//trim(filename)
+        write(*,*) 'Could not find file '//trim(settings%fseed)
         write(*,*)
         call exit(-8)
       end if
 
-      j = len_trim(filename)
-      do while (filename(j: j) /= '.')
+      j = len_trim(settings%fseed)
+      do while (settings%fseed(j: j) /= '.')
         j = j - 1
       end do
-      filepre = filename(1: j - 1)
-      ext = filename(j + 1: len_trim(filename))
+      filepre = settings%fseed(1: j - 1)
+      ext = settings%fseed(j + 1: len_trim(settings%fseed))
 
       if (ext == 'rle') then
-        g = readrle(filename)
+        g = readrle(settings%fseed)
       else if (ext== 'txt') then
-        g = readtxt(filename)
+        g = readtxt(settings%fseed)
       else if (ext == 'cells') then
-        g = readcells(filename)
+        g = readcells(settings%fseed)
       else
         write(*,*)
         write(*,*) 'Error'
-        write(*,*) 'Unrecognized file format '//trim(filename)
+        write(*,*) 'Unrecognized file format '//trim(settings%fseed)
         write(*,*)
         call exit(-9)
       end if
 
-      write(*,*)
-      write(*,*) 'Enter maximum number of ticks:'
-      read(*,*) nmax
+      if (settings%wrt) then
 
-      write(*,*)
-      write(*,*) 'Write results to file? (y/n)'
-      read(*,*) ans
-
-      writeout = .false.
-      if (ans == 'y') writeout = .true.
-
-      if (writeout) then
-
-        write(*,*)
-        write(*,*) 'Enter grid bounds for output'
-        write(*,*) '(lower 1, lower 2, upper 1, upper 2):'
-        read(*,*) n1, n2, n3, n4
-
-        if (n1 >= n3 .or. n2 >= n4) then
+        if (     settings%xmin >= settings%xmax
+     &      .or. settings%ymin >= settings%ymax) then
           write(*,*)
           write(*,*) 'Error'
           write(*,*) 'Bounding box must have positive area'
@@ -761,19 +898,9 @@
           call system('rm '//trim(frames)//'/'//trim(filepre)//'_*')
         end if
 
-        write(*,*)
-        write(*,*) 'Transpose video frames? (y/n)'
-        read(*,*) ans
-        tran = .false.
-        if (ans == 'y') tran = .true.
-
-        write(*,*)
-        write(*,*) 'Invert video colors? (y/n)'
-        read(*,*) ans
-        invert = .false.
-        if (ans == 'y') invert = .true.
-
-        call writelifepnm(fres, g, n1, n2, n3, n4, tran, invert)
+        call writelifepnm(fres, g, settings%xmin, settings%ymin,
+     &      settings%xmax, settings%ymax, settings%trans,
+     &      settings%invert)
 
       end if
 
@@ -796,21 +923,25 @@
       ! Time loop
       dead = .false.
       n = 0
-      do while (n < nmax .and. .not. dead)
+      do while (n < settings%n .and. .not. dead)
 
         ! Switch roles of g and g0 every other frame
 
         n = n + 1
-        if (writeout) write(*,*) 'Frame ', n
-        call nextgen(filepre, n1, n2, n3, n4, writeout, dead, tran,
-     &           invert, g0, g, n, niminmin, njminmin, nimaxmax,
-     &           njmaxmax, frames)
+        if (settings%wrt) write(*,*) 'Frame ', n
+        call nextgen(filepre, settings%xmin, settings%ymin,
+     &      settings%xmax, settings%ymax, settings%wrt, dead,
+     &      settings%trans,
+     &      settings%invert, g0, g, n, niminmin, njminmin, nimaxmax,
+     &      njmaxmax, frames)
 
         n = n + 1
-        if (writeout) write(*,*) 'Frame ', n
-        call nextgen(filepre, n1, n2, n3, n4, writeout, dead, tran,
-     &           invert, g, g0, n, niminmin, njminmin, nimaxmax,
-     &           njmaxmax, frames)
+        if (settings%wrt) write(*,*) 'Frame ', n
+        call nextgen(filepre, settings%xmin, settings%ymin,
+     &      settings%xmax, settings%ymax, settings%wrt, dead,
+     &      settings%trans,
+     &      settings%invert, g, g0, n, niminmin, njminmin, nimaxmax,
+     &      njmaxmax, frames)
 
       end do
 
@@ -835,7 +966,7 @@
       write(*,*) 'upper bounds = ', nimaxmax, njmaxmax
       write(*,*)
 
-      call exit(0)
+      call exit(io)
 
       end program life
 

@@ -14,10 +14,20 @@ project(${PROJECT} Fortran)
 set(SUBMODULE_DIR submodules)
 
 set(PNMIO pnmio)
+set(JSONFORTRAN json-fortran)
+
 add_subdirectory(${SUBMODULE_DIR}/${PNMIO})
+add_subdirectory(${SUBMODULE_DIR}/${JSONFORTRAN})
 
 add_executable(${PROJECT} life.f)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${PNMIO})
-target_link_libraries(${PROJECT} ${PNMIO})
+include_directories(
+	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${PNMIO}
+	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${JSONFORTRAN}/include
+	)
+
+target_link_libraries(${PROJECT}
+	${PNMIO}
+	jsonfortran-static
+	)
 

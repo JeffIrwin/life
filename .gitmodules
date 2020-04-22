@@ -4,3 +4,6 @@
 [submodule "submodules/bat"]
 	path = submodules/bat
 	url = https://github.com/JeffIrwin/bat
+[submodule "submodules/json-fortran"]
+	path = submodules/json-fortran
+	url = https://github.com/JeffIrwin/json-fortran

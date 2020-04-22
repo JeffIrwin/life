@@ -1,6 +1,0 @@
-"factory.txt"      filename
-100                number of generations
-y                  write results? (y/n)
--10 -10 100 100    bbox
-n                  transpose? (y/n)
-n                  invert? (y/n)
