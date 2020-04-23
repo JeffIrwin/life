@@ -31,8 +31,9 @@ Several seed formats are supported, including the popular run-length encoded `.r
 
 Two different plain-text formats with the seed in a matrix of characters are supported.  See for example [bunnies.cells](inputs/bunnies.cells) or [factory.txt](inputs/factory.txt).  Seed format is automatically determined based on the file extension, which may not be standardized.
 
-Images written by `life` are in the portable anymap format:
-![](https://github.com/JeffIrwin/life/inputs/expected-output/acorn_99.pbm)
+Images written by `life` are in the portable anymap format.  An example (converted to PNG for github) is below:
+
+![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn_99.png)
 
 ## Stitch image frames into a video
 Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `inputs` directory:
