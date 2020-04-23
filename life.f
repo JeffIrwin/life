@@ -20,6 +20,18 @@
       character, parameter :: tab = char(9)
       character(len = *), parameter :: me = "life"
 
+      integer, parameter ::
+     &    ERR_POSITIVE_BOX = 400,
+     &    ERR_BAD_SEED     = 401,
+     &    ERR_WRITEPNM     = 402,
+     &    ERR_TXT_CHARS    = 403,
+     &    ERR_404          = 404,
+     &    ERR_CELLS_CHARS  = 405,
+     &    ERR_CELLS_COLS   = 406,
+     &    ERR_RLE_READ1    = 407,
+     &    ERR_RLE_READ2    = 408,
+     &    IO_SUCCESS       = 0
+
       type life_settings
 
         character(len = :), allocatable :: fjson, fseed
@@ -228,7 +240,7 @@
               write(*,*) 'Bad character '//c//' after runcount '
      &                   //line(k0: k1)
               write(*,*)
-              call exit(-1)
+              call exit(ERR_RLE_READ1)
             end if
           else if (c == 'b') then
             readrle(i, j) = .false.
@@ -246,7 +258,7 @@
             write(*,*) 'Error reading RLE file.'
             write(*,*) 'Bad character '//c//'.'
             write(*,*)
-            call exit(-2)
+            call exit(ERR_RLE_READ2)
           end if
         end do
       end do
@@ -284,7 +296,7 @@
         write(*,*) 'Too many columns in '//trim(filename)
         write(*,*) 'Increase line length and re-compile.'
         write(*,*)
-        call exit(-3)
+        call exit(ERR_CELLS_COLS)
       end if
 
       rewind(ifile)
@@ -328,7 +340,7 @@
             write(*,*) 'Error reading input file '//trim(filename)
             write(*,*) 'Input grid must consist of .''s and O''s'
             write(*,*)
-            call exit(-4)
+            call exit(ERR_CELLS_CHARS)
           end if
         end do
       end do
@@ -367,7 +379,7 @@
             write(*,*) 'Error reading input file '//trim(filename)
             write(*,*) 'Input grid must consist of 0''s and 1''s'
             write(*,*)
-            call exit(-5)
+            call exit(ERR_TXT_CHARS)
           end if
         end do
       end do
@@ -486,80 +498,9 @@
       end do
 
       io = writepnm(frm, b, filename, .false.)
-      if (io /= 0) call exit(-6)
+      if (io /= 0) call exit(ERR_WRITEPNM)
 
       end subroutine writelifepnm
-
-!=======================================================================
-
-      ! Could also add a transpose option.
-
-      subroutine writegrid(filename, g, fliplr, flipud)
-
-      character :: c, filename*(*)
-
-      integer :: i, j, ifile, il, iu, jl, ju, tmp, is, js
-
-      logical, intent(in) :: flipud, fliplr
-      logical*1, allocatable :: g(:,:)
-
-      il = lbound(g, 1)
-      iu = ubound(g, 1)
-      jl = lbound(g, 2)
-      ju = ubound(g, 2)
-      is = 1
-      js = 1
-
-      if (fliplr) then
-        tmp = jl
-        jl = ju
-        ju = tmp
-        js = -1
-      end if
-      if (flipud) then
-        tmp = il
-        il = iu
-        iu = tmp
-        is = -1
-      end if
-
-      open(newunit = ifile, file = filename)
-      write(ifile, '(i0)') iu - il + 1
-      write(ifile, '(i0)') ju - jl + 1
-      do i = il, iu, is
-        do j = jl, ju, js
-          c = '0'
-          if (g(i, j)) c = '1'
-          write(ifile, '(a)', advance = 'no') c//' '
-        end do
-        write(ifile,*)
-      end do
-      close(ifile)
-
-      end subroutine writegrid
-
-!=======================================================================
-
-      subroutine printgrid(g)
-
-      character :: c
-
-      integer :: i, j, jl, ju
-      logical*1, allocatable :: g(:,:)
-
-      jl = lbound(g, 2)
-      ju = ubound(g, 2)
-
-      do i = lbound(g, 1), ubound(g, 1)
-        do j = jl, ju
-          c = ' '
-          if (g(i, j)) c = 'o'
-          write(*, '(a)', advance = 'no') c//' '
-        end do
-        write(*,*)
-      end do
-
-      end subroutine printgrid
 
 !=======================================================================
 
@@ -794,7 +735,7 @@
 
       call json%destroy()
 
-      io = 0
+      io = IO_SUCCESS
 
       end subroutine load_json
 
@@ -828,7 +769,7 @@
         write(*,*) 'Error'
         write(*,*) 'Could not find file '//trim(settings%fseed)
         write(*,*)
-        call exit(-8)
+        call exit(ERR_404)
       end if
 
       j = len_trim(settings%fseed)
@@ -849,7 +790,7 @@
         write(*,*) 'Error'
         write(*,*) 'Unrecognized file format '//trim(settings%fseed)
         write(*,*)
-        call exit(-9)
+        call exit(ERR_BAD_SEED)
       end if
 
       if (settings%wrt) then
@@ -860,7 +801,7 @@
           write(*,*) 'Error'
           write(*,*) 'Bounding box must have positive area'
           write(*,*)
-          call exit(-10)
+          call exit(ERR_POSITIVE_BOX)
         end if
 
         frames = 'frames'
@@ -881,11 +822,6 @@
      &      settings%invert)
 
       end if
-
-      !call writegrid('cata.txt', g, .false., .false.)
-      !call writegrid('catacryst.txt', g, .false., .false.)
-      !call writerle('cata.rle', g)
-      !call exit(-11)
 
       niminmin = lbound(g, 1)
       njminmin = lbound(g, 2)
@@ -923,20 +859,6 @@
 
       end do
 
-      !open(newunit = ifile, file = trim(filepre)//'_cols.txt')
-      !write(ifile, '(a)') '# column, number of live cells'
-      !do j = lbound(g, 2), ubound(g, 2)
-      !  write(ifile, *) j, count(g(:, j))
-      !end do
-      !close(ifile)
-
-      !open(newunit = ifile, file = trim(filepre)//'_rows.txt')
-      !write(ifile, '(a)') '# row, number of live cells'
-      !do i = lbound(g, 1), ubound(g, 1)
-      !  write(ifile, *) i, count(g(i, :))
-      !end do
-      !close(ifile)
-
       write(*,*)
       write(*,*) 'number of generations = ', n
       write(*,*)
@@ -950,21 +872,6 @@
 
       end module lifemod
 
-      !! Test writegrid
-      !filename = 'meth946.rle'
-      !g = readrle(filename)
-      !call writegrid('test_write.txt', g, .true., .false.)
-
-      !! Place two gosper glider guns facing each other.
-      !g1 = readtxt('gosper.txt')
-      !g2 = readtxt('gosper_fliplr_flipud.txt')
-      !allocate(g(90, 134))
-      !g(:,:) = .false.
-      !g(1:9, 1:36) = g1
-      !g(82: 90, 99: 134) = g2
-      !call writegrid('gosper_shootout.txt', g, .false., .false.)
-      !call exit(-7)
-
 !=======================================================================
 
       program life
@@ -977,12 +884,13 @@
 
       type(life_settings) :: settings
 
-      io = 0
+      io = IO_SUCCESS
+
       call load_args(settings, io)
-      if (io /= 0) call exit(io)
+      if (io /= IO_SUCCESS) call exit(io)
 
       call load_json(settings, io)
-      if (io /= 0) call exit(io)
+      if (io /= IO_SUCCESS) call exit(io)
 
       call live(settings, io)
 
