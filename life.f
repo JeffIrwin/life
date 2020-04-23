@@ -389,25 +389,14 @@
 
 !=======================================================================
 
+
+      subroutine writelifepnm(filename, g, settings)
+
       ! filename      name of the file to be written to
       !
       ! g             logical grid of live/dead cells
-      !
-      ! n1            lower bound of image dimension 1
-      !
-      ! n2            lower bound of image dimension 2
-      !
-      ! n3            upper bound of image dimension 1
-      !
-      ! n4            upper bound of image dimension 2
-      !
-      ! tran          if true, transpose the grid
-      !
-      ! invert        if true, invert the colors (make live cells black)
 
       ! Could also add fliplr and flipud options.
-
-      subroutine writelifepnm(filename, g, n1, n2, n3, n4, tran, invert)
 
       character :: filename*(*), c1, c0
       character, allocatable :: b(:,:)
@@ -416,8 +405,17 @@
      &           frm, io, i0, i1, ii, jj, j8
 
       logical, parameter :: ascii = .false.
-      logical, intent(in) :: tran, invert
+      logical :: tran
       logical*1, allocatable :: g(:,:)
+
+      type(life_settings) :: settings
+
+      n1 = settings%xmin
+      n2 = settings%ymin
+      n3 = settings%xmax
+      n4 = settings%ymax
+
+      tran = settings%trans
 
       ! FFMPEG requires dimensions in multiples of 2.
       n13 = (n3 - n1)
@@ -451,7 +449,7 @@
 
       end if
 
-      if (invert) then
+      if (settings%invert) then
         i0 = 1
         i1 = 0
         if (.not. ascii) b = achar(0)      ! 00000000
@@ -484,7 +482,7 @@
 
               jj = j8 / 8
 
-              if (invert) then
+              if (settings%invert) then
                 b(jj,ii)
      &              = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
               else
@@ -504,19 +502,19 @@
 
 !=======================================================================
 
-      subroutine nextgen(filepre, n1, n2, n3, n4, writeout, dead, tran,
-     &           invert, g0, g, n, niminmin, njminmin, nimaxmax,
-     &           njmaxmax, frames)
+      subroutine nextgen(filepre, settings, dead, g0, g, n,
+     &    niminmin, njminmin, nimaxmax, njmaxmax, frames)
 
       character :: cn*256, filepre*256, fres*256, frames*256
 
       integer :: i, j, n, nimin, njmin, nimax, njmax, nimin0,
      &           nimax0, njmin0, njmax0, nbrs, niminmin, nimaxmax,
-     &           njminmin, njmaxmax, n1, n2, n3, n4
+     &           njminmin, njmaxmax
 
       logical, intent(inout) :: dead
-      logical, intent(in) :: writeout, tran, invert
       logical*1, allocatable :: g(:,:), g0(:,:)
+
+      type(life_settings) :: settings
 
       ! Trim or extend the grid.
       nimin0 = lbound(g0, 1)
@@ -598,10 +596,10 @@
       !allocate(g0(nimin: nimax, njmin: njmax))
       !g0 = g
 
-      if (writeout) then
+      if (settings%wrt) then
         write(cn, '(i0)') n
         fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
-        call writelifepnm(fres, g, n1, n2, n3, n4, tran, invert)
+        call writelifepnm(fres, g, settings)
       end if
 
       end subroutine nextgen
@@ -817,9 +815,7 @@
           call system('rm '//trim(frames)//'/'//trim(filepre)//'_*')
         end if
 
-        call writelifepnm(fres, g, settings%xmin, settings%ymin,
-     &      settings%xmax, settings%ymax, settings%trans,
-     &      settings%invert)
+        call writelifepnm(fres, g, settings)
 
       end if
 
@@ -843,19 +839,13 @@
 
         n = n + 1
         if (settings%wrt) write(*,*) 'Frame ', n
-        call nextgen(filepre, settings%xmin, settings%ymin,
-     &      settings%xmax, settings%ymax, settings%wrt, dead,
-     &      settings%trans,
-     &      settings%invert, g0, g, n, niminmin, njminmin, nimaxmax,
-     &      njmaxmax, frames)
+        call nextgen(filepre, settings, dead, g0, g, n,
+     &      niminmin, njminmin, nimaxmax, njmaxmax, frames)
 
         n = n + 1
         if (settings%wrt) write(*,*) 'Frame ', n
-        call nextgen(filepre, settings%xmin, settings%ymin,
-     &      settings%xmax, settings%ymax, settings%wrt, dead,
-     &      settings%trans,
-     &      settings%invert, g, g0, n, niminmin, njminmin, nimaxmax,
-     &      njmaxmax, frames)
+        call nextgen(filepre, settings, dead, g, g0, n,
+     &      niminmin, njminmin, nimaxmax, njmaxmax, frames)
 
       end do
 
