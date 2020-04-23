@@ -4,30 +4,35 @@
 Conway's game of life in Fortran
 
 ## Compile
-The GNU Fortran compiler works on Windows and Linux (at least):
+Use CMake, or run the provided CMake wrapper script:
 
-    gfortran -o life life.f
+    ./build.sh
 
 ## Run
-The `life` program takes input from stdin:
+The `life` program loads its input from a JSON file:
 
     cd inputs
-    ../life.exe < acorn.inp
+    ../build/life.exe acorn.json
 
-where `acorn.inp` configures a few input options:
+where `acorn.json` configures a few input options:
 
-    "acorn.rle"           seed filename
-    100                   number of generations
-    y                     write results? (y/n)
-    -150 -100 150 150     bounding box: min x, min y, max x, max y
-    n                     transpose image frames? (y/n)
-    n                     invert image B/W colors? (y/n)
+    {
+            "Seed file": "acorn.rle",
+            "Frames"   : 100,
+            "Write"    : true,
+            "Bounds"   : [-150, -100, 150, 150],
+            "Transpose": false,
+            "Invert"   : false
+    }
 
-The order of the lines matters, and only end-of-line comments work after the expected number of input arguments for each line.
+The path to the seed file, if not absolute, must be relative to the runtime directory.
 
 Several seed formats are supported, including the popular run-length encoded `.rle` format, many examples of which can be found on https://www.conwaylife.com/forums
 
-Two different plain-text formats with the seed in a matrix of characters are supported.  See for example [bunnies.cells](inputs/bunnies.cells) or [factory.txt](inputs/factory.txt).
+Two different plain-text formats with the seed in a matrix of characters are supported.  See for example [bunnies.cells](inputs/bunnies.cells) or [factory.txt](inputs/factory.txt).  Seed format is automatically determined based on the file extension, which may not be standardized.
+
+Images written by `life` are in the portable anymap format:
+![](https://github.com/JeffIrwin/life/inputs/expected-output/acorn_99.pbm)
 
 ## Stitch image frames into a video
 Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `inputs` directory:
