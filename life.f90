@@ -781,11 +781,16 @@ if (.not. fexist) then
 	call exit(ERR_404)
 end if
 
+j = len_trim(settings%fjson)
+do while (settings%fjson(j: j) /= '.')
+	j = j - 1
+end do
+filepre = settings%fjson(1: j - 1)
+
 j = len_trim(settings%fseed)
 do while (settings%fseed(j: j) /= '.')
 	j = j - 1
 end do
-filepre = settings%fseed(1: j - 1)
 ext = settings%fseed(j + 1: len_trim(settings%fseed))
 
 if (ext == 'rle') then
