@@ -36,7 +36,7 @@
 
         character(len = :), allocatable :: fjson, fseed
 
-        integer :: n, xmin, xmax, ymin, ymax
+        integer :: n, xmin, xmax, ymin, ymax, pscale
 
         logical :: wrt, trans, invert
 
@@ -401,8 +401,8 @@
       character :: filename*(*), c1, c0
       character, allocatable :: b(:,:)
 
-      integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24,
-     &           frm, io, i0, i1, ii, jj, j8
+      integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24, frm,
+     &    io, i0, i1, ii, jj, j8, ig, jg, ilo, ihi, jlo, jhi, s
 
       logical, parameter :: ascii = .false.
       logical :: tran
@@ -414,6 +414,7 @@
       n2 = settings%ymin
       n3 = settings%xmax
       n4 = settings%ymax
+      s = settings%pscale
 
       tran = settings%trans
 
@@ -445,7 +446,8 @@
         ! Binary:  pack 8 B&W pixel bits into a 1 byte character.
         ! Only the horizontal dimension is padded.
         frm = 4
-        allocate(b(ceiling((n4 - n2 + 1) / 8.d0), n3 - n1 + 1))
+        allocate(b(ceiling((n4 - n2 + 1) / 8.d0) * s,
+     &      (n3 - n1 + 1) * s))
 
       end if
 
@@ -463,12 +465,25 @@
 
       if (ascii) b = c1
 
-      do i = max(n1, il), min(n3, iu)
-        ii = n3 - i + 1
-        do j = max(n2, jl), min(n4, ju)
-          if (((.not. tran) .and. g(i,j))
-     &         .or.  (tran  .and. g(j,i))) then
-            j8 = j - n2 + 1
+      ! Array b is scaled by the pixel scaling factor settings%pscale,
+      ! but array g is not.  Loop the b indices i and j faster than the
+      ! g indices ig and jg.
+
+      ilo = max(n1, il)
+      ihi = min(n3, iu)
+      ig = ilo - 1
+      do i = ilo * s, ihi * s
+        if (mod(i, s) == 0) ig = ig + 1
+        ii = n3 * s - i + 1
+
+        jlo = max(n2, jl)
+        jhi = min(n4, ju)
+        jg = jlo - 1
+        do j = jlo * s, jhi * s
+          if (mod(j, s) == 0) jg = jg + 1
+          if (((.not. tran) .and. g(ig,jg))
+     &         .or.  (tran  .and. g(jg,ig))) then
+            j8 = j - n2 * s + 1
 
             if (ascii) then
               b(j8, ii) = c0
@@ -685,6 +700,7 @@
       end if
 
       settings%n = 100
+      settings%pscale = 1
 
       settings%xmin = -319
       settings%xmax =  320
@@ -712,6 +728,9 @@
 
       call json%get('Frames', i, found)
       if (found) settings%n = i
+
+      call json%get('Scale', i, found)
+      if (found) settings%pscale = i
 
       call json%get('Bounds[1]', i, found)
       if (found) settings%xmin = i
