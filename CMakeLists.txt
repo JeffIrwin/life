@@ -19,7 +19,7 @@ set(JSONFORTRAN json-fortran)
 add_subdirectory(${SUBMODULE_DIR}/${PNMIO})
 add_subdirectory(${SUBMODULE_DIR}/${JSONFORTRAN})
 
-add_executable(${PROJECT} life.f90)
+add_executable(${PROJECT} life.f)
 
 include_directories(
 	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${PNMIO}
