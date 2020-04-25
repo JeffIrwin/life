@@ -41,4 +41,4 @@ Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `i
     ffmpeg -i ./frames/acorn_%d.pbm -c:v libx264 -pix_fmt yuv420p acorn-out-0.mp4
 
 ## Sample output
-https://www.youtube.com/watch?v=2m9aPL1qjo0
+https://youtu.be/dUq5SWXs0bc
