@@ -33,7 +33,7 @@ type life_settings
 
 	integer :: n, xmin, xmax, ymin, ymax, pscale
 
-	logical :: wrt, trans, invert, trace
+	logical :: wrt, trans, invert, trace, ascii
 
 end type life_settings
 
@@ -400,7 +400,6 @@ integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24, frm, &
 		ib, jb
 integer, allocatable, save :: age(:,:)
 
-logical, parameter :: ascii = .false.
 logical :: tran
 logical*1, allocatable :: g(:,:)
 
@@ -434,7 +433,7 @@ end if
 
 if (settings%trace) then
 
-	if (ascii) then
+	if (settings%ascii) then
 		frm = PNM_GRAY_ASCII
 	else
 		frm = PNM_GRAY_BINARY
@@ -452,10 +451,10 @@ if (settings%trace) then
 
 else
 
-	if (ascii) then
+	if (settings%ascii) then
 
 		frm = PNM_BW_ASCII
-		allocate(b(n4 - n2 + 1, n3 - n1 + 1))
+		allocate(b((n4 - n2 + 1) * s, (n3 - n1 + 1) * s))
 
 	else
 
@@ -538,16 +537,16 @@ else
 	if (settings%invert) then
 		i0 = 1
 		i1 = 0
-		if (.not. ascii) b = achar(0)      ! 00000000
+		if (.not. settings%ascii) b = achar(0)      ! 00000000
 	else
 		i0 = 0
 		i1 = 1
-		if (.not. ascii) b = achar(z'ff')  ! 11111111
+		if (.not. settings%ascii) b = achar(z'ff')  ! 11111111
 	end if
 	c0 = achar(i0)
 	c1 = achar(i1)
 
-	if (ascii) b = c1
+	if (settings%ascii) b = c1
 
 	! Array b is scaled by the pixel scaling factor settings%pscale,
 	! but array g is not.  Loop the b indices i and j faster than the
@@ -561,11 +560,13 @@ else
 		jg = jlo - 1
 		do j = jlo * s, jhi * s
 			if (mod(j, s) == 0) jg = jg + 1
+
+			! TODO:  short-circuit logic crashes debug
 			if (((.not. tran) .and. g(ig,jg)) &
 			     .or.  (tran  .and. g(jg,ig))) then
 				j8 = j - n2 * s + 1
 
-				if (ascii) then
+				if (settings%ascii) then
 					b(j8, ii) = c0
 				else
 
@@ -786,6 +787,7 @@ settings%wrt    = .true.
 settings%trans  = .false.
 settings%invert = .false.
 settings%trace  = .false.
+settings%ascii  = .false.
 
 call json%initialize()
 
@@ -828,6 +830,9 @@ if (found) settings%invert = bool
 
 call json%get('Trace', bool, found)
 if (found) settings%trace = bool
+
+call json%get('ASCII', bool, found)
+if (found) settings%ascii = bool
 
 call json%destroy()
 
