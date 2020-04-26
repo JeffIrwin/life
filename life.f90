@@ -33,7 +33,7 @@ type life_settings
 
 	integer :: n, xmin, xmax, ymin, ymax, pscale
 
-	logical :: wrt, trans, invert
+	logical :: wrt, trans, invert, trace
 
 end type life_settings
 
@@ -219,7 +219,7 @@ do while (c /= '!')
 			!print *, 'runcount = ', runcount
 			!print *, 'i, j = ', i, j
 			!print *, 'c = ', c
-			
+
 			if (c == 'b') then
 				readrle(i, j: j + runcount - 1) = .false.
 				j = j + runcount
@@ -396,7 +396,9 @@ character :: filename*(*), c1, c0
 character, allocatable :: b(:,:)
 
 integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24, frm, &
-		io, i0, i1, ii, jj, j8, ig, jg, ilo, ihi, jlo, jhi, s
+		io, i0, i1, ii, jj, j8, ig, jg, ilo, ihi, jlo, jhi, s, ia, ja, &
+		ib, jb
+integer, allocatable, save :: age(:,:)
 
 logical, parameter :: ascii = .false.
 logical :: tran
@@ -430,77 +432,162 @@ else
 	ju = ubound(g, 2)
 end if
 
-if (ascii) then
+if (settings%trace) then
 
-	frm = 1
-	allocate(b(n4 - n2 + 1, n3 - n1 + 1))
+	if (ascii) then
+		frm = PNM_GRAY_ASCII
+	else
+		frm = PNM_GRAY_BINARY
+	end if
+
+	allocate(b((n4 - n2 + 1) * s, (n3 - n1 + 1) * s))
+
+	if (.not. allocated(age)) then
+		! Number of frames since a grid unit was last alive.  So actually not
+		! "age" unless you invert the usual boolean interpretation of life and
+		! death.  TODO:  points that were never alive.
+		allocate(age(n4 - n2 + 1, n3 - n1 + 1))
+		age = 0
+	end if
 
 else
 
-	! Binary:  pack 8 B&W pixel bits into a 1 byte character.
-	! Only the horizontal dimension is padded.
-	frm = 4
-	allocate(b(ceiling((n4 - n2 + 1) / 8.d0) * s, &
-	                   (n3 - n1 + 1) * s))
+	if (ascii) then
+
+		frm = PNM_BW_ASCII
+		allocate(b(n4 - n2 + 1, n3 - n1 + 1))
+
+	else
+
+		! Binary:  pack 8 B&W pixel bits into a 1 byte character.
+		! Only the horizontal dimension is padded.
+		frm = PNM_BW_BINARY
+		allocate(b(ceiling((n4 - n2 + 1) / 8.d0) * s, (n3 - n1 + 1) * s))
+
+	end if
 
 end if
-
-if (settings%invert) then
-	i0 = 1
-	i1 = 0
-	if (.not. ascii) b = achar(0)      ! 00000000
-else
-	i0 = 0
-	i1 = 1
-	if (.not. ascii) b = achar(z'ff')  ! 11111111
-end if
-c0 = achar(i0)
-c1 = achar(i1)
-
-if (ascii) b = c1
-
-! Array b is scaled by the pixel scaling factor settings%pscale,
-! but array g is not.  Loop the b indices i and j faster than the
-! g indices ig and jg.
 
 ilo = max(n1, il)
 ihi = min(n3, iu)
-ig = ilo - 1
-do i = ilo * s, ihi * s
-	if (mod(i, s) == 0) ig = ig + 1
-	ii = n3 * s - i + 1
+jlo = max(n2, jl)
+jhi = min(n4, ju)
 
-	jlo = max(n2, jl)
-	jhi = min(n4, ju)
-	jg = jlo - 1
-	do j = jlo * s, jhi * s
-		if (mod(j, s) == 0) jg = jg + 1
-		if (((.not. tran) .and. g(ig,jg)) &
-		     .or.  (tran  .and. g(jg,ig))) then
-			j8 = j - n2 * s + 1
+if (settings%trace) then
 
-			if (ascii) then
-				b(j8, ii) = c0
-			else
+	! Grayscale.  TODO:  this overflows every 256 frames.
 
-				! j8 is the bitwise index and jj is the bytewise index.
-				! Use mod(j8,8) to get the endian-flipped index of the bit
-				! within the byte to be set or cleared.  ichar(.,1) casts
-				! a character to a 1-byte int, and achar casts the int
-				! back to a character.
+	b = achar(0)
+	age = age + 1
 
-				jj = j8 / 8
+	if (tran) then
+		do i = ilo, ihi
+			ia = n3 - i + 1
+			do j = jlo, jhi
+				ja = j - n2 + 1
 
-				if (settings%invert) then
-					b(jj,ii) = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
-				else
-					b(jj,ii) = achar(ibclr(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+				if (g(j,i)) then
+					age(ja, ia) = 0
 				end if
 
+				b((ja - 1) * s + 1: ja * s, (ia - 1) * s + 1: ia * s) &
+					= achar(age(ja, ia))
+
+			end do
+		end do
+	else
+		do i = ilo, ihi
+			ia = n3 - i + 1
+			do j = jlo, jhi
+				ja = j - n2 + 1
+
+				if (g(i,j)) then
+					age(ja, ia) = 0
+				end if
+
+				b((ja - 1) * s + 1: ja * s, (ia - 1) * s + 1: ia * s) &
+					= achar(age(ja, ia))
+
+			end do
+		end do
+	end if
+
+	!do i = ilo, ihi
+	!	ia = ihi - i + 1
+	!	ib = ia * s
+	!	do j = jlo, jhi
+	!		ja = j - jlo + 1
+	!		jb = ja * s
+	!		if (tran) then
+	!			if (g(j,i)) then
+	!				age(ja, ia) = 0
+	!			end if
+	!		else
+	!			if (g(i,j)) then
+	!				age(ja, ia) = 0
+	!			end if
+	!		end if
+	!		b(jb - s + 1: jb, ib - s + 1: ib) = achar(age(ja, ia))
+	!	end do
+	!end do
+
+else
+
+	! Black and white
+
+	if (settings%invert) then
+		i0 = 1
+		i1 = 0
+		if (.not. ascii) b = achar(0)      ! 00000000
+	else
+		i0 = 0
+		i1 = 1
+		if (.not. ascii) b = achar(z'ff')  ! 11111111
+	end if
+	c0 = achar(i0)
+	c1 = achar(i1)
+
+	if (ascii) b = c1
+
+	! Array b is scaled by the pixel scaling factor settings%pscale,
+	! but array g is not.  Loop the b indices i and j faster than the
+	! g indices ig and jg.
+
+	ig = ilo - 1
+	do i = ilo * s, ihi * s
+		if (mod(i, s) == 0) ig = ig + 1
+		ii = n3 * s - i + 1
+
+		jg = jlo - 1
+		do j = jlo * s, jhi * s
+			if (mod(j, s) == 0) jg = jg + 1
+			if (((.not. tran) .and. g(ig,jg)) &
+			     .or.  (tran  .and. g(jg,ig))) then
+				j8 = j - n2 * s + 1
+
+				if (ascii) then
+					b(j8, ii) = c0
+				else
+
+					! j8 is the bitwise index and jj is the bytewise index.
+					! Use mod(j8,8) to get the endian-flipped index of the bit
+					! within the byte to be set or cleared.  ichar(.,1) casts
+					! a character to a 1-byte int, and achar casts the int
+					! back to a character.
+
+					jj = j8 / 8
+
+					if (settings%invert) then
+						b(jj,ii) = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+					else
+						b(jj,ii) = achar(ibclr(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+					end if
+
+				end if
 			end if
-		end if
+		end do
 	end do
-end do
+end if
 
 io = writepnm(frm, b, filename, .false.)
 if (io /= 0) call exit(ERR_WRITEPNM)
@@ -598,10 +685,6 @@ do j = njmin, njmax
 end do
 !$OMP end do
 !$OMP end parallel
-
-!deallocate(g0)
-!allocate(g0(nimin: nimax, njmin: njmax))
-!g0 = g
 
 if (settings%wrt) then
 	write(cn, '(i0)') n
@@ -702,6 +785,7 @@ settings%ymax =  180
 settings%wrt    = .true.
 settings%trans  = .false.
 settings%invert = .false.
+settings%trace  = .false.
 
 call json%initialize()
 
@@ -741,6 +825,9 @@ if (found) settings%trans = bool
 
 call json%get('Invert', bool, found)
 if (found) settings%invert = bool
+
+call json%get('Trace', bool, found)
+if (found) settings%trace = bool
 
 call json%destroy()
 
@@ -866,10 +953,12 @@ do while (n < settings%n .and. .not. dead)
 end do
 
 write(*,*)
-write(*,*) 'number of generations = ', n
+write(*,*) 'Number of generations = ', n
 write(*,*)
-write(*,*) 'lower bounds = ', niminmin, njminmin
-write(*,*) 'upper bounds = ', nimaxmax, njmaxmax
+write(*,*) 'Lower bounds = ', niminmin, njminmin
+write(*,*) 'Upper bounds = ', nimaxmax, njmaxmax
+write(*,*)
+write(*,*) 'End of life!'
 write(*,*)
 
 end subroutine live
