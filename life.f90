@@ -384,6 +384,25 @@ end function readtxt
 
 !=======================================================================
 
+logical function gt(g, tran, i, j)
+
+! helper function to avoid out-of-bounds index with short-circuit logic
+
+logical :: tran
+logical*1, allocatable :: g(:,:)
+
+integer :: i, j
+
+if (tran) then
+	gt = g(j,i)
+else
+	gt = g(i,j)
+end if
+
+end function gt
+
+!=======================================================================
+
 subroutine writelifepnm(filename, g, settings)
 
 ! filename      name of the file to be written to
@@ -479,56 +498,18 @@ if (settings%trace) then
 	b = achar(0)
 	age = age + 1
 
-	if (tran) then
-		do i = ilo, ihi
-			ia = n3 - i + 1
-			do j = jlo, jhi
-				ja = j - n2 + 1
+	do i = ilo, ihi
+		ia = n3 - i + 1
+		ib = ia * s
+		do j = jlo, jhi
+			ja = j - n2 + 1
+			jb = ja * s
 
-				if (g(j,i)) then
-					age(ja, ia) = 0
-				end if
+			if (gt(g, tran, i, j)) age(ja, ia) = 0
+			b(jb - s + 1: jb, ib - s + 1: ib) = achar(age(ja, ia))
 
-				b((ja - 1) * s + 1: ja * s, (ia - 1) * s + 1: ia * s) &
-					= achar(age(ja, ia))
-
-			end do
 		end do
-	else
-		do i = ilo, ihi
-			ia = n3 - i + 1
-			do j = jlo, jhi
-				ja = j - n2 + 1
-
-				if (g(i,j)) then
-					age(ja, ia) = 0
-				end if
-
-				b((ja - 1) * s + 1: ja * s, (ia - 1) * s + 1: ia * s) &
-					= achar(age(ja, ia))
-
-			end do
-		end do
-	end if
-
-	!do i = ilo, ihi
-	!	ia = ihi - i + 1
-	!	ib = ia * s
-	!	do j = jlo, jhi
-	!		ja = j - jlo + 1
-	!		jb = ja * s
-	!		if (tran) then
-	!			if (g(j,i)) then
-	!				age(ja, ia) = 0
-	!			end if
-	!		else
-	!			if (g(i,j)) then
-	!				age(ja, ia) = 0
-	!			end if
-	!		end if
-	!		b(jb - s + 1: jb, ib - s + 1: ib) = achar(age(ja, ia))
-	!	end do
-	!end do
+	end do
 
 else
 
@@ -561,9 +542,7 @@ else
 		do j = jlo * s, jhi * s
 			if (mod(j, s) == 0) jg = jg + 1
 
-			! TODO:  short-circuit logic crashes debug
-			if (((.not. tran) .and. g(ig,jg)) &
-			     .or.  (tran  .and. g(jg,ig))) then
+			if (gt(g, tran, ig, jg)) then
 				j8 = j - n2 * s + 1
 
 				if (settings%ascii) then
