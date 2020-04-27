@@ -37,6 +37,14 @@ type life_settings
 
 end type life_settings
 
+type life_data
+
+	! TODO:  encapsulate more into this
+
+	integer :: frame
+
+end type life_data
+
 contains
 
 !=======================================================================
@@ -403,7 +411,33 @@ end function gt
 
 !=======================================================================
 
-subroutine writelifepnm(filename, g, settings)
+character function graymap(i, s, d)
+
+integer :: i, il
+
+type(life_data) :: d
+type(life_settings) :: s
+
+il = i
+if (s%invert) then
+	il = 255 - il
+end if
+
+if (i > d%frame) then
+	if (s%invert) then
+		graymap = achar(0)
+	else
+		graymap = achar(255)
+	end if
+else
+	graymap = achar(min(max(il, 0), 255))
+end if
+
+end function graymap
+
+!=======================================================================
+
+subroutine writelifepnm(filename, g, settings, d)
 
 ! filename      name of the file to be written to
 !
@@ -424,11 +458,13 @@ logical*1, allocatable :: g(:,:)
 
 type(life_settings) :: settings
 
+type(life_data) :: d
+
 n1 = settings%xmin
 n2 = settings%ymin
 n3 = settings%xmax
 n4 = settings%ymax
-s = settings%pscale
+s  = settings%pscale
 
 tran = settings%trans
 
@@ -461,11 +497,16 @@ if (settings%trace) then
 	allocate(b((n4 - n2 + 1) * s, (n3 - n1 + 1) * s))
 
 	if (.not. allocated(age)) then
+
 		! Number of frames since a grid unit was last alive.  So actually not
 		! "age" unless you invert the usual boolean interpretation of life and
-		! death.  TODO:  points that were never alive.
+		! death.
 		allocate(age(n4 - n2 + 1, n3 - n1 + 1))
-		age = 0
+
+		! Points that were never alive can be inferred from having an age
+		! greater than the current number of frames.
+		age = 2
+
 	end if
 
 else
@@ -493,11 +534,18 @@ jhi = min(n4, ju)
 
 if (settings%trace) then
 
-	! Grayscale.  TODO:  this overflows every 256 frames.
+	! Grayscale
 
-	b = achar(0)
+	if (settings%invert) then
+		b = achar(0)
+	else
+		b = achar(255)
+	end if
+
 	age = age + 1
 
+	! TODO:  ilo, ihi are wrong bounds.  Need to go outside to n1..4, at least
+	! before gliders escape.  This is only an issue here, not for B&W.
 	do i = ilo, ihi
 		ia = n3 - i + 1
 		ib = ia * s
@@ -506,7 +554,7 @@ if (settings%trace) then
 			jb = ja * s
 
 			if (gt(g, tran, i, j)) age(ja, ia) = 0
-			b(jb - s + 1: jb, ib - s + 1: ib) = achar(age(ja, ia))
+			b(jb - s + 1: jb, ib - s + 1: ib) = graymap(age(ja, ia), settings, d)
 
 		end do
 	end do
@@ -576,12 +624,12 @@ end subroutine writelifepnm
 
 !=======================================================================
 
-subroutine nextgen(filepre, settings, dead, g0, g, n, &
+subroutine nextgen(filepre, settings, dead, g0, g, d, &
 		niminmin, njminmin, nimaxmax, njmaxmax, frames)
 
 character :: cn*256, filepre*256, fres*256, frames*256
 
-integer :: i, j, n, nimin, njmin, nimax, njmax, nimin0, &
+integer :: i, j, nimin, njmin, nimax, njmax, nimin0, &
 		nimax0, njmin0, njmax0, nbrs, niminmin, nimaxmax, &
 		njminmin, njmaxmax
 
@@ -589,6 +637,7 @@ logical, intent(inout) :: dead
 logical*1, allocatable :: g(:,:), g0(:,:)
 
 type(life_settings) :: settings
+type(life_data) :: d
 
 ! Trim or extend the grid.
 nimin0 = lbound(g0, 1)
@@ -667,9 +716,9 @@ end do
 !$OMP end parallel
 
 if (settings%wrt) then
-	write(cn, '(i0)') n
+	write(cn, '(i0)') d%frame
 	fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
-	call writelifepnm(fres, g, settings)
+	call writelifepnm(fres, g, settings, d)
 end if
 
 end subroutine nextgen
@@ -834,13 +883,15 @@ subroutine live(settings, io)
 character :: cn*256, ans, filepre*256, ext*32, &
 		fres*256, frames*256
 
-integer :: i, j, n, niminmin, nimaxmax, njminmin, njmaxmax, &
+integer :: i, j, niminmin, nimaxmax, njminmin, njmaxmax, &
 		ifile, io
 
 logical :: dead, fexist
 logical*1, allocatable :: g(:,:), g0(:,:)
 
 type(life_settings) :: settings
+
+type(life_data) :: d
 
 ! TODO:  resolve path to fseed (and "frames") relative to fjson
 inquire(file = settings%fseed, exist = fexist)
@@ -902,7 +953,7 @@ if (settings%wrt) then
 		call system('rm '//trim(frames)//'/'//trim(filepre)//'_*')
 	end if
 
-	call writelifepnm(fres, g, settings)
+	call writelifepnm(fres, g, settings, d)
 
 end if
 
@@ -919,25 +970,25 @@ g0 = g
 
 ! Time loop
 dead = .false.
-n = 0
-do while (n < settings%n .and. .not. dead)
+d%frame = 0
+do while (d%frame < settings%n .and. .not. dead)
 
 	! Switch roles of g and g0 every other frame
 
-	n = n + 1
-	if (settings%wrt) write(*,*) 'Frame ', n
-	call nextgen(filepre, settings, dead, g0, g, n, &
+	d%frame = d%frame + 1
+	if (settings%wrt) write(*,*) 'Frame ', d%frame
+	call nextgen(filepre, settings, dead, g0, g, d, &
 			niminmin, njminmin, nimaxmax, njmaxmax, frames)
 
-	n = n + 1
-	if (settings%wrt) write(*,*) 'Frame ', n
-	call nextgen(filepre, settings, dead, g, g0, n, &
+	d%frame = d%frame + 1
+	if (settings%wrt) write(*,*) 'Frame ', d%frame
+	call nextgen(filepre, settings, dead, g, g0, d, &
 			niminmin, njminmin, nimaxmax, njmaxmax, frames)
 
 end do
 
 write(*,*)
-write(*,*) 'Number of generations = ', n
+write(*,*) 'Number of generations = ', d%frame
 write(*,*)
 write(*,*) 'Lower bounds = ', niminmin, njminmin
 write(*,*) 'Upper bounds = ', nimaxmax, njmaxmax
