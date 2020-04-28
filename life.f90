@@ -544,16 +544,23 @@ if (settings%trace) then
 
 	age = age + 1
 
-	! TODO:  ilo, ihi are wrong bounds.  Need to go outside to n1..4, at least
-	! before gliders escape.  This is only an issue here, not for B&W.
 	do i = ilo, ihi
 		ia = n3 - i + 1
-		ib = ia * s
 		do j = jlo, jhi
+			ja = j - n2 + 1
+			if (gt(g, tran, i, j)) age(ja, ia) = 0
+		end do
+	end do
+
+	! Bounds of g may shrink, but we need to go outside those bounds to map
+	! ages.
+	do i = n1, n3
+		ia = n3 - i + 1
+		ib = ia * s
+		do j = n2, n4
 			ja = j - n2 + 1
 			jb = ja * s
 
-			if (gt(g, tran, i, j)) age(ja, ia) = 0
 			b(jb - s + 1: jb, ib - s + 1: ib) = graymap(age(ja, ia), settings, d)
 
 		end do
