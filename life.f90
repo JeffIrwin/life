@@ -12,7 +12,7 @@ use pnmio
 implicit none
 
 character, parameter :: tab = char(9)
-character(len = *), parameter :: me = "life"
+character(len = *), parameter :: me = "life", framedir = 'frames'
 
 integer, parameter :: &
 		ERR_POSITIVE_BOX = 400, &
@@ -40,6 +40,8 @@ end type life_settings
 type life_data
 
 	! TODO:  encapsulate more into this
+
+	character(len = :), allocatable :: filepre
 
 	integer :: frame
 
@@ -437,7 +439,7 @@ end function graymap
 
 !=======================================================================
 
-subroutine writelifepnm(filename, g, settings, d)
+subroutine writelifepnm(filename, g, s, d)
 
 ! filename      name of the file to be written to
 !
@@ -449,24 +451,24 @@ character :: filename*(*), c1, c0
 character, allocatable :: b(:,:)
 
 integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24, frm, &
-		io, i0, i1, ii, jj, j8, ig, jg, ilo, ihi, jlo, jhi, s, ia, ja, &
+		io, i0, i1, ii, jj, j8, ig, jg, ilo, ihi, jlo, jhi, ps, ia, ja, &
 		ib, jb
 integer, allocatable, save :: age(:,:)
 
 logical :: tran
 logical*1, allocatable :: g(:,:)
 
-type(life_settings) :: settings
+type(life_settings) :: s
 
 type(life_data) :: d
 
-n1 = settings%xmin
-n2 = settings%ymin
-n3 = settings%xmax
-n4 = settings%ymax
-s  = settings%pscale
+n1 = s%xmin
+n2 = s%ymin
+n3 = s%xmax
+n4 = s%ymax
+ps = s%pscale
 
-tran = settings%trans
+tran = s%trans
 
 ! FFMPEG requires dimensions in multiples of 2.
 n13 = (n3 - n1)
@@ -486,15 +488,15 @@ else
 	ju = ubound(g, 2)
 end if
 
-if (settings%trace) then
+if (s%trace) then
 
-	if (settings%ascii) then
+	if (s%ascii) then
 		frm = PNM_GRAY_ASCII
 	else
 		frm = PNM_GRAY_BINARY
 	end if
 
-	allocate(b((n4 - n2 + 1) * s, (n3 - n1 + 1) * s))
+	allocate(b((n4 - n2 + 1) * ps, (n3 - n1 + 1) * ps))
 
 	if (.not. allocated(age)) then
 
@@ -511,17 +513,17 @@ if (settings%trace) then
 
 else
 
-	if (settings%ascii) then
+	if (s%ascii) then
 
 		frm = PNM_BW_ASCII
-		allocate(b((n4 - n2 + 1) * s, (n3 - n1 + 1) * s))
+		allocate(b((n4 - n2 + 1) * ps, (n3 - n1 + 1) * ps))
 
 	else
 
 		! Binary:  pack 8 B&W pixel bits into a 1 byte character.
 		! Only the horizontal dimension is padded.
 		frm = PNM_BW_BINARY
-		allocate(b(ceiling((n4 - n2 + 1) / 8.d0) * s, (n3 - n1 + 1) * s))
+		allocate(b(ceiling((n4 - n2 + 1) / 8.d0) * ps, (n3 - n1 + 1) * ps))
 
 	end if
 
@@ -532,11 +534,11 @@ ihi = min(n3, iu)
 jlo = max(n2, jl)
 jhi = min(n4, ju)
 
-if (settings%trace) then
+if (s%trace) then
 
 	! Grayscale
 
-	if (settings%invert) then
+	if (s%invert) then
 		b = achar(0)
 	else
 		b = achar(255)
@@ -556,12 +558,12 @@ if (settings%trace) then
 	! ages.
 	do i = n1, n3
 		ia = n3 - i + 1
-		ib = ia * s
+		ib = ia * ps
 		do j = n2, n4
 			ja = j - n2 + 1
-			jb = ja * s
+			jb = ja * ps
 
-			b(jb - s + 1: jb, ib - s + 1: ib) = graymap(age(ja, ia), settings, d)
+			b(jb - ps + 1: jb, ib - ps + 1: ib) = graymap(age(ja, ia), s, d)
 
 		end do
 	end do
@@ -570,37 +572,37 @@ else
 
 	! Black and white
 
-	if (settings%invert) then
+	if (s%invert) then
 		i0 = 1
 		i1 = 0
-		if (.not. settings%ascii) b = achar(0)      ! 00000000
+		if (.not. s%ascii) b = achar(0)      ! 00000000
 	else
 		i0 = 0
 		i1 = 1
-		if (.not. settings%ascii) b = achar(z'ff')  ! 11111111
+		if (.not. s%ascii) b = achar(z'ff')  ! 11111111
 	end if
 	c0 = achar(i0)
 	c1 = achar(i1)
 
-	if (settings%ascii) b = c1
+	if (s%ascii) b = c1
 
-	! Array b is scaled by the pixel scaling factor settings%pscale,
+	! Array b is scaled by the pixel scaling factor s%pscale,
 	! but array g is not.  Loop the b indices i and j faster than the
 	! g indices ig and jg.
 
 	ig = ilo - 1
-	do i = ilo * s, ihi * s
-		if (mod(i, s) == 0) ig = ig + 1
-		ii = n3 * s - i + 1
+	do i = ilo * ps, ihi * ps
+		if (mod(i, ps) == 0) ig = ig + 1
+		ii = n3 * ps - i + 1
 
 		jg = jlo - 1
-		do j = jlo * s, jhi * s
-			if (mod(j, s) == 0) jg = jg + 1
+		do j = jlo * ps, jhi * ps
+			if (mod(j, ps) == 0) jg = jg + 1
 
 			if (gt(g, tran, ig, jg)) then
-				j8 = j - n2 * s + 1
+				j8 = j - n2 * ps + 1
 
-				if (settings%ascii) then
+				if (s%ascii) then
 					b(j8, ii) = c0
 				else
 
@@ -612,7 +614,7 @@ else
 
 					jj = j8 / 8
 
-					if (settings%invert) then
+					if (s%invert) then
 						b(jj,ii) = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
 					else
 						b(jj,ii) = achar(ibclr(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
@@ -631,10 +633,10 @@ end subroutine writelifepnm
 
 !=======================================================================
 
-subroutine nextgen(filepre, settings, dead, g0, g, d, &
-		niminmin, njminmin, nimaxmax, njmaxmax, frames)
+subroutine nextgen(s, dead, g0, g, d, &
+		niminmin, njminmin, nimaxmax, njmaxmax)
 
-character :: cn*256, filepre*256, fres*256, frames*256
+character :: cn*256, fres*256
 
 integer :: i, j, nimin, njmin, nimax, njmax, nimin0, &
 		nimax0, njmin0, njmax0, nbrs, niminmin, nimaxmax, &
@@ -643,7 +645,7 @@ integer :: i, j, nimin, njmin, nimax, njmax, nimin0, &
 logical, intent(inout) :: dead
 logical*1, allocatable :: g(:,:), g0(:,:)
 
-type(life_settings) :: settings
+type(life_settings) :: s
 type(life_data) :: d
 
 ! Trim or extend the grid.
@@ -722,10 +724,10 @@ end do
 !$OMP end do
 !$OMP end parallel
 
-if (settings%wrt) then
+if (s%wrt) then
 	write(cn, '(i0)') d%frame
-	fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
-	call writelifepnm(fres, g, settings, d)
+	fres = framedir//'/'//trim(d%filepre)//'_'//trim(cn)
+	call writelifepnm(fres, g, s, d)
 end if
 
 end subroutine nextgen
@@ -877,7 +879,30 @@ end subroutine load_json
 
 !=======================================================================
 
-subroutine live(settings, io)
+subroutine stitch(s, d)
+
+character(len = :), allocatable :: ffmpeg
+
+type(life_settings) :: s
+
+type(life_data) :: d
+
+write(*,*) 'Running ffmpeg ...'
+
+ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.pbm -c:v libx264' &
+	//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
+
+write(*,*) 'Command = "', ffmpeg, '"'
+
+call system(ffmpeg)
+
+write(*,*)
+
+end subroutine stitch
+
+!=======================================================================
+
+subroutine live(s, io)
 
 ! Live, live is a verb
 !
@@ -887,8 +912,8 @@ subroutine live(settings, io)
 !
 ! Most faithful mirror
 
-character :: cn*256, ans, filepre*256, ext*32, &
-		fres*256, frames*256
+character :: cn*256, ans, ext*32, &
+		fres*256
 
 integer :: i, j, niminmin, nimaxmax, njminmin, njmaxmax, &
 		ifile, io
@@ -896,50 +921,49 @@ integer :: i, j, niminmin, nimaxmax, njminmin, njmaxmax, &
 logical :: dead, fexist
 logical*1, allocatable :: g(:,:), g0(:,:)
 
-type(life_settings) :: settings
+type(life_settings) :: s
 
 type(life_data) :: d
 
 ! TODO:  resolve path to fseed (and "frames") relative to fjson
-inquire(file = settings%fseed, exist = fexist)
+inquire(file = s%fseed, exist = fexist)
 if (.not. fexist) then
 	write(*,*)
 	write(*,*) 'Error'
-	write(*,*) 'Could not find file '//trim(settings%fseed)
+	write(*,*) 'Could not find file '//trim(s%fseed)
 	write(*,*)
 	call exit(ERR_404)
 end if
 
-j = len_trim(settings%fjson)
-do while (settings%fjson(j: j) /= '.')
+j = len_trim(s%fjson)
+do while (s%fjson(j: j) /= '.')
 	j = j - 1
 end do
-filepre = settings%fjson(1: j - 1)
+d%filepre = s%fjson(1: j - 1)
 
-j = len_trim(settings%fseed)
-do while (settings%fseed(j: j) /= '.')
+j = len_trim(s%fseed)
+do while (s%fseed(j: j) /= '.')
 	j = j - 1
 end do
-ext = settings%fseed(j + 1: len_trim(settings%fseed))
+ext = s%fseed(j + 1: len_trim(s%fseed))
 
 if (ext == 'rle') then
-	g = readrle(settings%fseed)
+	g = readrle(s%fseed)
 else if (ext== 'txt') then
-	g = readtxt(settings%fseed)
+	g = readtxt(s%fseed)
 else if (ext == 'cells') then
-	g = readcells(settings%fseed)
+	g = readcells(s%fseed)
 else
 	write(*,*)
 	write(*,*) 'Error'
-	write(*,*) 'Unrecognized file format '//trim(settings%fseed)
+	write(*,*) 'Unrecognized file format '//trim(s%fseed)
 	write(*,*)
 	call exit(ERR_BAD_SEED)
 end if
 
-if (settings%wrt) then
+if (s%wrt) then
 
-	if (     settings%xmin >= settings%xmax &
-	    .or. settings%ymin >= settings%ymax) then
+	if (s%xmin >= s%xmax .or. s%ymin >= s%ymax) then
 		write(*,*)
 		write(*,*) 'Error'
 		write(*,*) 'Bounding box must have positive area'
@@ -947,20 +971,19 @@ if (settings%wrt) then
 		call exit(ERR_POSITIVE_BOX)
 	end if
 
-	frames = 'frames'
-	inquire(file = trim(frames), exist = fexist)
-	if (.not. fexist) call system('mkdir '//trim(frames))
+	inquire(file = framedir, exist = fexist)
+	if (.not. fexist) call system('mkdir '//framedir)
 
 	write(cn, '(i0)') 0
-	fres = trim(frames)//'/'//trim(filepre)//'_'//trim(cn)
+	fres = framedir//'/'//trim(d%filepre)//'_'//trim(cn)
 
 	inquire(file = fres, exist = fexist)
 	if (fexist) then
 		! TODO:  native Windows
-		call system('rm '//trim(frames)//'/'//trim(filepre)//'_*')
+		call system('rm '//framedir//'/'//trim(d%filepre)//'_*')
 	end if
 
-	call writelifepnm(fres, g, settings, d)
+	call writelifepnm(fres, g, s, d)
 
 end if
 
@@ -978,19 +1001,17 @@ g0 = g
 ! Time loop
 dead = .false.
 d%frame = 0
-do while (d%frame < settings%n .and. .not. dead)
+do while (d%frame < s%n .and. .not. dead)
 
 	! Switch roles of g and g0 every other frame
 
 	d%frame = d%frame + 1
-	if (settings%wrt) write(*,*) 'Frame ', d%frame
-	call nextgen(filepre, settings, dead, g0, g, d, &
-			niminmin, njminmin, nimaxmax, njmaxmax, frames)
+	if (s%wrt) write(*,*) 'Frame ', d%frame
+	call nextgen(s, dead, g0, g, d, niminmin, njminmin, nimaxmax, njmaxmax)
 
 	d%frame = d%frame + 1
-	if (settings%wrt) write(*,*) 'Frame ', d%frame
-	call nextgen(filepre, settings, dead, g, g0, d, &
-			niminmin, njminmin, nimaxmax, njmaxmax, frames)
+	if (s%wrt) write(*,*) 'Frame ', d%frame
+	call nextgen(s, dead, g, g0, d, niminmin, njminmin, nimaxmax, njmaxmax)
 
 end do
 
@@ -1000,6 +1021,9 @@ write(*,*)
 write(*,*) 'Lower bounds = ', niminmin, njminmin
 write(*,*) 'Upper bounds = ', nimaxmax, njmaxmax
 write(*,*)
+
+call stitch(s, d)
+
 write(*,*) 'End of life!'
 write(*,*)
 
