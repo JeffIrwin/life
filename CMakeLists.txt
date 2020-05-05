@@ -9,6 +9,7 @@ set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 
 if(APPLE)
 	set(CMAKE_EXE_LINKER_FLAGS "-openmp")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 else()
 	set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
 endif()
