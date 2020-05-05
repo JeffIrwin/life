@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <vector>  // this should be in sort.h if it works
 
 #include <colormapper.h>
 
