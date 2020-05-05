@@ -7,21 +7,28 @@ set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp -Wno-tabs")
 set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_Fortran_FLAGS})
+
 set(CMAKE_Fortran_COMPILER "gfortran")
 
-project(${PROJECT} Fortran)
+
+project(${PROJECT} Fortran CXX)
 
 set(SUBMODULE_DIR submodules)
 
 set(PNMIO pnmio)
 set(JSONFORTRAN json-fortran)
+set(COLORMAPPER colormapper)
 
 add_subdirectory(${SUBMODULE_DIR}/${PNMIO})
 add_subdirectory(${SUBMODULE_DIR}/${JSONFORTRAN})
+add_subdirectory(${SUBMODULE_DIR}/${COLORMAPPER})
 
-add_executable(${PROJECT} life.f90)
+add_executable(${PROJECT} life.f90 colormapper_wrapper.cpp)
 
+# TODO:  pnmio's include directory could be automatically targetted like colormapper's?
 include_directories(
+	${SUBMODULE_DIR}/${COLORMAPPER}
 	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${PNMIO}
 	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${JSONFORTRAN}/include
 	)
@@ -29,5 +36,6 @@ include_directories(
 target_link_libraries(${PROJECT}
 	${PNMIO}
 	jsonfortran-static
+	${COLORMAPPER}
 	)
 

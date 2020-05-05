@@ -7,3 +7,6 @@
 [submodule "submodules/json-fortran"]
 	path = submodules/json-fortran
 	url = https://github.com/JeffIrwin/json-fortran
+[submodule "submodules/colormapper"]
+	path = submodules/colormapper
+	url = https://github.com/JeffIrwin/colormapper

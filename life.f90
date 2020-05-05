@@ -27,6 +27,8 @@ integer, parameter :: &
 		ERR_CMD_ARGS     = 409, &
 		IO_SUCCESS       = 0
 
+integer, external :: loadColormap
+
 type life_settings
 
 	character(len = :), allocatable :: fjson, fseed
@@ -997,6 +999,8 @@ g0 = g
 
 !!  Convert input to rle for convenience
 !call writerle(trim(filepre)//'_rle.rle', g)
+
+io = loadColormap()
 
 ! Time loop
 dead = .false.
