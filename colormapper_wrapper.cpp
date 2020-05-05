@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 
-//// TODO
-//#include <colormapper.h>
+#include <colormapper.h>
 
 // TODO:  args for filename and map name
 extern "C" int loadcolormap_()
