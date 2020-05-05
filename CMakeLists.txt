@@ -7,7 +7,9 @@ set(CMAKE_Fortran_FLAGS "-Wall -Wextra -fopenmp -Wno-tabs")
 set(CMAKE_Fortran_FLAGS_DEBUG "-pedantic -fbounds-check -fbacktrace")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
 
-if(WINDOWS OR LINUX)
+if(APPLE)
+	set(CMAKE_EXE_LINKER_FLAGS "-openmp")
+else()
 	set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
 endif()
 
