@@ -7,7 +7,7 @@
 static ColorMap c;
 
 // TODO:  args for filename and map name
-extern "C" int loadcolormap_()
+extern "C" int load_colormap_()
 {
 	std::string file = "../submodules/colormapper/submodules/colormaps/ColorMaps5.6.0.json";
 	std::string mapname = "Plasma (matplotlib)";
@@ -20,19 +20,16 @@ extern "C" int loadcolormap_()
 	return 0;
 }
 
-extern "C" void map_(double& x, uint8_t& r, uint8_t& g, uint8_t& b)
+extern "C" void map_(double& x, uint8_t* rgbo)
 {
-	std::cout << "x = " << x << std::endl;
+	//std::cout << "x = " << x << std::endl;
 
 	std::vector<uint8_t> rgb = c.map(x);
-	r = rgb[0];
-	g = rgb[1];
-	b = rgb[2];
 
-	std::cout << "r = " << (int) r << std::endl;
-	std::cout << "g = " << (int) g << std::endl;
-	std::cout << "b = " << (int) b << std::endl;
-	std::cout << std::endl;
+	rgbo[0] = rgb[0];
+	rgbo[1] = rgb[1];
+	rgbo[2] = rgb[2];
+
 	return;
 }
 

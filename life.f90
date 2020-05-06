@@ -27,7 +27,7 @@ integer, parameter :: &
 		ERR_CMD_ARGS     = 409, &
 		IO_SUCCESS       = 0
 
-integer, external :: loadColormap
+integer, external :: load_colormap
 
 type life_settings
 
@@ -915,7 +915,7 @@ subroutine live(s, io)
 ! Most faithful mirror
 
 character :: cn*256, ans, ext*32, &
-		fres*256, rb, gb, bb
+		fres*256, rb, gb, bb, rgb(3)
 
 double precision :: x
 
@@ -1002,14 +1002,15 @@ g0 = g
 !!  Convert input to rle for convenience
 !call writerle(trim(filepre)//'_rle.rle', g)
 
-io = loadColormap()
+io = load_colormap()
 x = 0.d0
-call map(x, rb, gb, bb)
-print *, 'rgb = ', ichar(rb), ichar(gb), ichar(bb)
+call map(x, rgb)
+print *, 'rgb = ', ichar(rgb)
 
-x = 0.25d0
-call map(x, rb, gb, bb)
-print *, 'rgb = ', ichar(rb), ichar(gb), ichar(bb)
+!x = 0.25d0
+!call map(x, rgb)
+!print *, 'rgb = ', ichar(rgb)
+!call exit(IO_SUCCESS)
 
 ! Time loop
 dead = .false.
