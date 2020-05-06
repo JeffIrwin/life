@@ -915,7 +915,9 @@ subroutine live(s, io)
 ! Most faithful mirror
 
 character :: cn*256, ans, ext*32, &
-		fres*256
+		fres*256, rb, gb, bb
+
+double precision :: x
 
 integer :: i, j, niminmin, nimaxmax, njminmin, njmaxmax, &
 		ifile, io
@@ -1001,6 +1003,13 @@ g0 = g
 !call writerle(trim(filepre)//'_rle.rle', g)
 
 io = loadColormap()
+x = 0.d0
+call map(x, rb, gb, bb)
+print *, 'rgb = ', ichar(rb), ichar(gb), ichar(bb)
+
+x = 0.25d0
+call map(x, rb, gb, bb)
+print *, 'rgb = ', ichar(rb), ichar(gb), ichar(bb)
 
 ! Time loop
 dead = .false.
