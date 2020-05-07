@@ -11,7 +11,7 @@ use pnmio
 
 implicit none
 
-character, parameter :: tab = char(9)
+character, parameter :: nullc = char(0), tab = char(9)
 character(len = *), parameter :: me = "life", framedir = 'frames'
 
 integer, parameter :: &
@@ -34,7 +34,7 @@ integer, external :: load_colormap
 
 type life_settings
 
-	character(len = :), allocatable :: fjson, fseed
+	character(len = :), allocatable :: fjson, fseed, fcolormap, colormap
 
 	integer :: n, xmin, xmax, ymin, ymax, pscale
 
@@ -826,6 +826,9 @@ settings%invert = .false.
 settings%trace  = .false.
 settings%ascii  = .false.
 
+settings%fcolormap = ""
+settings%colormap  = ""
+
 call json%initialize()
 
 call json%load(filename = settings%fjson)
@@ -840,6 +843,12 @@ call json%print()
 
 call json%get('Seed file', str, found)
 if (found) settings%fseed = str
+
+call json%get('Colormap file', str, found)
+if (found) settings%fcolormap = str
+
+call json%get('Colormap name', str, found)
+if (found) settings%colormap = str
 
 call json%get('Frames', i, found)
 if (found) settings%n = i
@@ -1005,7 +1014,7 @@ g0 = g
 !!  Convert input to rle for convenience
 !call writerle(trim(filepre)//'_rle.rle', g)
 
-io = load_colormap()
+io = load_colormap(s%fcolormap//nullc, s%colormap//nullc)
 
 ! Time loop
 dead = .false.

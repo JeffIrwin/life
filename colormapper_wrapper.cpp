@@ -6,15 +6,16 @@
 
 static ColorMap c;
 
-extern "C" int load_colormap_()
+extern "C" int load_colormap_(char* cfile, char* cmapname)
 {
-	std::string file = "../submodules/colormapper/submodules/colormaps/ColorMaps5.6.0.json";
-	std::string mapname = "Plasma (matplotlib)";
+	std::string file = cfile;
+	std::string mapname = cmapname;
 
-	c.paraView = true;
+	c.paraView = (file != "" && mapname != "");
 	c.imap = -1;
 	c.inv = false;
-	c.load(file, mapname);
+
+	if (c.paraView) c.load(file, mapname);
 
 	return 0;
 }
