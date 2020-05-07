@@ -27,6 +27,9 @@ integer, parameter :: &
 		ERR_CMD_ARGS     = 409, &
 		IO_SUCCESS       = 0
 
+integer, parameter :: nrgb = 3
+
+! From colormapper_wrapper.cpp
 integer, external :: load_colormap
 
 type life_settings
@@ -415,32 +418,6 @@ end function gt
 
 !=======================================================================
 
-character function graymap(i, s, d)
-
-integer :: i, il
-
-type(life_data) :: d
-type(life_settings) :: s
-
-il = i
-if (s%invert) then
-	il = 255 - il
-end if
-
-if (i > d%frame) then
-	if (s%invert) then
-		graymap = achar(0)
-	else
-		graymap = achar(255)
-	end if
-else
-	graymap = achar(min(max(il, 0), 255))
-end if
-
-end function graymap
-
-!=======================================================================
-
 subroutine writelifepnm(filename, g, s, d)
 
 ! filename      name of the file to be written to
@@ -449,12 +426,14 @@ subroutine writelifepnm(filename, g, s, d)
 
 ! Could also add fliplr and flipud options.
 
-character :: filename*(*), c1, c0
+character :: filename*(*), c1, c0, rgb(3)
 character, allocatable :: b(:,:)
+
+double precision :: dage
 
 integer :: i, j, il, iu, jl, ju, n1, n2, n3, n4, n13, n24, frm, &
 		io, i0, i1, ii, jj, j8, ig, jg, ilo, ihi, jlo, jhi, ps, ia, ja, &
-		ib, jb
+		ib, jb, maxage
 integer, allocatable, save :: age(:,:)
 
 logical :: tran
@@ -493,12 +472,12 @@ end if
 if (s%trace) then
 
 	if (s%ascii) then
-		frm = PNM_GRAY_ASCII
+		frm = PNM_RGB_ASCII
 	else
-		frm = PNM_GRAY_BINARY
+		frm = PNM_RGB_BINARY
 	end if
 
-	allocate(b((n4 - n2 + 1) * ps, (n3 - n1 + 1) * ps))
+	allocate(b((n4 - n2 + 1) * nrgb * ps, (n3 - n1 + 1) * ps))
 
 	if (.not. allocated(age)) then
 
@@ -538,7 +517,7 @@ jhi = min(n4, ju)
 
 if (s%trace) then
 
-	! Grayscale
+	! RGB
 
 	if (s%invert) then
 		b = achar(0)
@@ -556,6 +535,11 @@ if (s%trace) then
 		end do
 	end do
 
+	! Arbitrary, could be something else.  Don't want to use the actual oldest
+	! pixel in the grid, as that could be quite old and dilute the rest of the
+	! color range.
+	maxage = 255
+
 	! Bounds of g may shrink, but we need to go outside those bounds to map
 	! ages.
 	do i = n1, n3
@@ -563,9 +547,23 @@ if (s%trace) then
 		ib = ia * ps
 		do j = n2, n4
 			ja = j - n2 + 1
-			jb = ja * ps
+			jb = ja * nrgb * ps
 
-			b(jb - ps + 1: jb, ib - ps + 1: ib) = graymap(age(ja, ia), s, d)
+			! Use 0 for dead pixels, otherwise colormapper uses NaN color for
+			! values outside of range [0, 1].
+			if (age(ja, ia) > min(maxage, d%frame)) then
+				dage = 0.d0
+			else
+				! Linear decay
+				dage = dble(maxage - age(ja, ia)) / maxage
+			end if
+
+			! From colormapper_wrapper.cpp
+			call map(dage, rgb)
+
+			b(jb - nrgb * ps + 1: jb: nrgb, ib - ps + 1: ib) = rgb(1)
+			b(jb - nrgb * ps + 2: jb: nrgb, ib - ps + 1: ib) = rgb(2)
+			b(jb - nrgb * ps + 3: jb: nrgb, ib - ps + 1: ib) = rgb(3)
 
 		end do
 	end do
@@ -891,8 +889,13 @@ type(life_data) :: d
 
 write(*,*) 'Running ffmpeg ...'
 
-ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.pbm -c:v libx264' &
-	//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
+if (s%trace) then
+	ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.ppm -c:v libx264' &
+		//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
+else
+	ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.pbm -c:v libx264' &
+		//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
+end if
 
 write(*,*) 'Command = "', ffmpeg, '"'
 
@@ -1003,14 +1006,6 @@ g0 = g
 !call writerle(trim(filepre)//'_rle.rle', g)
 
 io = load_colormap()
-x = 0.d0
-call map(x, rgb)
-print *, 'rgb = ', ichar(rgb)
-
-!x = 0.25d0
-!call map(x, rgb)
-!print *, 'rgb = ', ichar(rgb)
-!call exit(IO_SUCCESS)
 
 ! Time loop
 dead = .false.

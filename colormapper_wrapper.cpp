@@ -6,7 +6,6 @@
 
 static ColorMap c;
 
-// TODO:  args for filename and map name
 extern "C" int load_colormap_()
 {
 	std::string file = "../submodules/colormapper/submodules/colormaps/ColorMaps5.6.0.json";
