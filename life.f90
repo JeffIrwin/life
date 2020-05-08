@@ -25,6 +25,7 @@ integer, parameter :: &
 		ERR_RLE_READ1    = 407, &
 		ERR_RLE_READ2    = 408, &
 		ERR_CMD_ARGS     = 409, &
+		ERR_COLORMAP     = 410, &
 		IO_SUCCESS       = 0
 
 integer, parameter :: nrgb = 3
@@ -1015,6 +1016,7 @@ g0 = g
 !call writerle(trim(filepre)//'_rle.rle', g)
 
 io = load_colormap(s%fcolormap//nullc, s%colormap//nullc)
+if (io /= 0) call exit(ERR_COLORMAP)
 
 ! Time loop
 dead = .false.

@@ -8,6 +8,8 @@ static ColorMap c;
 
 extern "C" int load_colormap_(char* cfile, char* cmapname)
 {
+	int io = 0;
+
 	std::string file = cfile;
 	std::string mapname = cmapname;
 
@@ -15,9 +17,9 @@ extern "C" int load_colormap_(char* cfile, char* cmapname)
 	c.imap = -1;
 	c.inv = false;
 
-	if (c.paraView) c.load(file, mapname);
+	if (c.paraView) io = c.load(file, mapname);
 
-	return 0;
+	return io;
 }
 
 extern "C" void map_(double& x, uint8_t* rgbo)

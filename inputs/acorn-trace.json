@@ -1,0 +1,13 @@
+{
+	"Seed file": "acorn.rle",
+	"Frames"   : 100,
+	"Write"    : true,
+	"Bounds"   : [-150, -100, 150, 150],
+
+	"Trace"    : true,
+	"Colormap file": "../submodules/colormapper/submodules/colormaps/ColorMaps5.6.0.json",
+	"Colormap name": "Inferno (matplotlib)",
+
+	"Transpose": false,
+	"Invert"   : false
+}

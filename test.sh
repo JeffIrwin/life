@@ -5,10 +5,12 @@ inputs=./inputs/*.json
 
 frames=( 2 10 99 )
 
+# "ppm" or "pbm"
+outputext=p[pb]m
+
 exebase=life
 outdir=./inputs/frames
 expectedoutdir=./inputs/expected-output
-outputext=pbm
 use_stdin="false"
 
 #===============================================================================
