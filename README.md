@@ -1,3 +1,4 @@
+
 ![](https://github.com/JeffIrwin/life/workflows/CI/badge.svg)
 
 # life
@@ -31,7 +32,7 @@ where `acorn.json` configures a few input options:
             "Invert"       : false
     }
 
-The path to the `Seed file` and `Colormap File`, if not absolute, must be relative to the runtime directory.
+The path to the `Seed file` and `Colormap file`, if not absolute, must be relative to the runtime directory.
 
 Several seed formats are supported, including the popular run-length encoded `.rle` format, many examples of which can be found on https://www.conwaylife.com/forums
 
@@ -52,3 +53,4 @@ Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `i
 
 ## Sample output
 https://youtu.be/dUq5SWXs0bc
+
