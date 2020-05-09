@@ -48,9 +48,10 @@ Images written by `life` are in the portable anymap format.  A black and white e
 
 With `Trace` enabled, the color is related to how long it has been since a cell was alive:
 
-![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-plasma_600.png) ![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-erdc_blue2green_BW_600.png)
-
-![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-viridis_600.png) ![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-inferno_600.png)
+![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-plasma_600.png)
+![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-erdc_blue2green_BW_600.png)
+![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-viridis_600.png)
+![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-inferno_600.png)
 
 ## Stitch image frames into a video
 Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `inputs` directory:
