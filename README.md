@@ -58,5 +58,6 @@ Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `i
     ffmpeg -i ./frames/acorn_%d.pbm -c:v libx264 -pix_fmt yuv420p acorn-out-0.mp4
 
 ## Sample output
-https://youtu.be/dUq5SWXs0bc
+Inferno tracers:  https://youtu.be/AI1IVfiSzx8
 
+Black and white:  https://youtu.be/dUq5SWXs0bc
