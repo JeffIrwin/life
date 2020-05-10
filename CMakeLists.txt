@@ -31,9 +31,7 @@ add_subdirectory(${SUBMODULE_DIR}/${COLORMAPPER})
 
 add_executable(${PROJECT} life.f90 colormapper_wrapper.cpp)
 
-# TODO:  pnmio's include directory could be automatically targetted like colormapper's?
 include_directories(
-	${SUBMODULE_DIR}/${COLORMAPPER}
 	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${PNMIO}
 	${CMAKE_CURRENT_BINARY_DIR}/${SUBMODULE_DIR}/${JSONFORTRAN}/include
 	)
