@@ -12,12 +12,7 @@ extern "C" int load_colormap_(char* cfile, char* cmapname)
 
 	std::string file = cfile;
 	std::string mapname = cmapname;
-
-	c.paraView = (file != "" && mapname != "");
-	c.imap = -1;
-	c.inv = false;
-
-	if (c.paraView) io = c.load(file, mapname);
+	if (file != "" && mapname != "") io = c.load(file, mapname);
 
 	return io;
 }
