@@ -30,3 +30,23 @@ extern "C" void map_(double& x, uint8_t* rgbo)
 	return;
 }
 
+extern "C" int writepng_(uint8_t* b, int& nx, int& ny, char* cf)
+{
+	// Can pix be constructed without copying every element of b?
+	// May need to add alpha channel in Fortran.
+
+	//std::vector<uint8_t> pix(b, b + 4 * nx * ny);
+	std::vector<uint8_t> pix(4 * nx * ny);
+	int j = 0;
+	for (int i = 0; i < 4 * nx * ny; i++)
+	{
+		if ((i+1) % 4 != 0)
+			pix[i] = b[j++];
+			// or
+			//   pix[j * 4/3] = b[j];
+		else
+			pix[i] = 255;
+	}
+
+	return irwincolor::savePng(pix, nx, ny, (std::string) cf);
+}

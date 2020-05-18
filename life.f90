@@ -17,7 +17,7 @@ character(len = *), parameter :: me = "life", framedir = 'frames'
 integer, parameter :: &
 		ERR_POSITIVE_BOX = 400, &
 		ERR_BAD_SEED     = 401, &
-		ERR_WRITEPNM     = 402, &
+		ERR_WRITEFRAME   = 402, &
 		ERR_TXT_CHARS    = 403, &
 		ERR_404          = 404, &
 		ERR_CELLS_CHARS  = 405, &
@@ -31,7 +31,7 @@ integer, parameter :: &
 integer, parameter :: nrgb = 3
 
 ! From colormapper_wrapper.cpp
-integer, external :: load_colormap
+integer, external :: load_colormap, writepng
 
 type life_settings
 
@@ -39,7 +39,7 @@ type life_settings
 
 	integer :: n, xmin, xmax, ymin, ymax, pscale
 
-	logical :: wrt, trans, invert, trace, ascii
+	logical :: wrt, trans, invert, trace, ascii, png
 
 end type life_settings
 
@@ -419,7 +419,7 @@ end function gt
 
 !=======================================================================
 
-subroutine writelifepnm(filename, g, s, d)
+subroutine writelifeframe(filename, g, s, d)
 
 ! filename      name of the file to be written to
 !
@@ -627,10 +627,20 @@ else
 	end do
 end if
 
-io = writepnm(frm, b, filename, .false.)
-if (io /= 0) call exit(ERR_WRITEPNM)
+if (s%trace .and. s%png) then
 
-end subroutine writelifepnm
+	io = writepng(b, (n4 - n2 + 1) * ps, (n3 - n1 + 1) * ps, &
+		trim(filename)//'.png'//nullc)
+	if (io /= 0) call exit(ERR_WRITEFRAME)
+
+else
+
+	io = writepnm(frm, b, filename, .false.)
+	if (io /= 0) call exit(ERR_WRITEFRAME)
+
+end if
+
+end subroutine writelifeframe
 
 !=======================================================================
 
@@ -728,7 +738,7 @@ end do
 if (s%wrt) then
 	write(cn, '(i0)') d%frame
 	fres = framedir//'/'//trim(d%filepre)//'_'//trim(cn)
-	call writelifepnm(fres, g, s, d)
+	call writelifeframe(fres, g, s, d)
 end if
 
 end subroutine nextgen
@@ -826,6 +836,7 @@ settings%trans  = .false.
 settings%invert = .false.
 settings%trace  = .false.
 settings%ascii  = .false.
+settings%png    = .false.  ! default pnm
 
 settings%fcolormap = ""
 settings%colormap  = ""
@@ -869,6 +880,9 @@ if (found) settings%ymax = i
 call json%get('Write', bool, found)
 if (found) settings%wrt = bool
 
+call json%get('PNG', bool, found)
+if (found) settings%png = bool
+
 call json%get('Transpose', bool, found)
 if (found) settings%trans = bool
 
@@ -891,7 +905,7 @@ end subroutine load_json
 
 subroutine stitch(s, d)
 
-character(len = :), allocatable :: ffmpeg
+character(len = :), allocatable :: ffmpeg, ext
 
 type(life_settings) :: s
 
@@ -900,12 +914,17 @@ type(life_data) :: d
 write(*,*) 'Running ffmpeg ...'
 
 if (s%trace) then
-	ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.ppm -c:v libx264' &
-		//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
+	if (s%png) then
+		ext = 'png'
+	else
+		ext = 'ppm'
+	end if
 else
-	ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.pbm -c:v libx264' &
-		//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
+	ext = 'pbm'
 end if
+
+ffmpeg = 'ffmpeg -i '//framedir//'/'//d%filepre//'_%d.'//ext//' -c:v libx264' &
+	//' -pix_fmt yuv420p '//d%filepre//'.mp4 -y'
 
 write(*,*) 'Command = "', ffmpeg, '"'
 
@@ -1000,7 +1019,7 @@ if (s%wrt) then
 		call system('rm '//framedir//'/'//trim(d%filepre)//'_*')
 	end if
 
-	call writelifepnm(fres, g, s, d)
+	call writelifeframe(fres, g, s, d)
 
 end if
 
