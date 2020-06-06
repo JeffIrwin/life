@@ -521,9 +521,9 @@ if (s%trace) then
 	! RGB
 
 	if (s%invert) then
-		b = achar(0)
+		b = char(0)
 	else
-		b = achar(255)
+		b = char(z'ff')
 	end if
 
 	age = age + 1
@@ -576,14 +576,14 @@ else
 	if (s%invert) then
 		i0 = 1
 		i1 = 0
-		if (.not. s%ascii) b = achar(0)      ! 00000000
+		if (.not. s%ascii) b = char(0)      ! 00000000
 	else
 		i0 = 0
 		i1 = 1
-		if (.not. s%ascii) b = achar(z'ff')  ! 11111111
+		if (.not. s%ascii) b = char(z'ff')  ! 11111111
 	end if
-	c0 = achar(i0)
-	c1 = achar(i1)
+	c0 = char(i0)
+	c1 = char(i1)
 
 	if (s%ascii) b = c1
 
@@ -610,15 +610,15 @@ else
 					! j8 is the bitwise index and jj is the bytewise index.
 					! Use mod(j8,8) to get the endian-flipped index of the bit
 					! within the byte to be set or cleared.  ichar(.,1) casts
-					! a character to a 1-byte int, and achar casts the int
+					! a character to a 1-byte int, and char casts the int
 					! back to a character.
 
 					jj = j8 / 8
 
 					if (s%invert) then
-						b(jj,ii) = achar(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+						b(jj,ii) = char(ibset(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
 					else
-						b(jj,ii) = achar(ibclr(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
+						b(jj,ii) = char(ibclr(ichar(b(jj,ii), 1), 7 - mod(j8,8)))
 					end if
 
 				end if
@@ -765,8 +765,6 @@ subroutine load_args(settings, io)
 character :: argv*256
 
 integer :: io, argc, i, ipos
-
-logical :: ljson
 
 type(life_settings) :: settings
 
@@ -946,13 +944,9 @@ subroutine live(s, io)
 !
 ! Most faithful mirror
 
-character :: cn*256, ans, ext*32, &
-		fres*256, rb, gb, bb, rgb(3)
+character :: cn*256, ext*32, fres*256
 
-double precision :: x
-
-integer :: i, j, niminmin, nimaxmax, njminmin, njmaxmax, &
-		ifile, io
+integer :: j, niminmin, nimaxmax, njminmin, njmaxmax, io
 
 logical :: dead, fexist
 logical*1, allocatable :: g(:,:), g0(:,:)
