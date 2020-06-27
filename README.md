@@ -6,6 +6,10 @@ Conway's game of life in Fortran
 
 ![](https://raw.githubusercontent.com/JeffIrwin/life/master/doc/acorn-inferno-crop.gif)
 
+## Download
+    git clone --recursive https://github.com/JeffIrwin/life
+    cd life
+
 ## Compile
 Use CMake, or run the provided CMake wrapper script:
 
@@ -56,6 +60,8 @@ With `Trace` enabled, the color is related to how long it has been since a cell 
 Use [FFmpeg](https://www.ffmpeg.org/download.html) to make a video.  From the `inputs` directory:
 
     ffmpeg -i ./frames/acorn_%d.pbm -c:v libx264 -pix_fmt yuv420p acorn-out-0.mp4
+
+If you have `ffmpeg` installed and in your path, `life` will automatically export the video.
 
 ## Sample output
 Inferno tracers:  https://youtu.be/AI1IVfiSzx8
