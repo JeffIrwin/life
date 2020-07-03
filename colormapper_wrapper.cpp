@@ -4,7 +4,7 @@
 
 #include <colormapper.h>
 
-static irwincolor::ColorMap c;
+static irwincolor::Map c;
 
 extern "C" int load_colormap_(char* cfile, char* cmapname)
 {
