@@ -523,7 +523,7 @@ if (s%trace) then
 	if (s%invert) then
 		b = char(0)
 	else
-		b = char(z'ff')
+		b = char(int(z'ff'))
 	end if
 
 	age = age + 1
@@ -580,7 +580,7 @@ else
 	else
 		i0 = 0
 		i1 = 1
-		if (.not. s%ascii) b = char(z'ff')  ! 11111111
+		if (.not. s%ascii) b = char(int(z'ff'))  ! 11111111
 	end if
 	c0 = char(i0)
 	c1 = char(i1)
