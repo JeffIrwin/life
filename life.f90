@@ -991,6 +991,12 @@ else
 	call exit(ERR_BAD_SEED)
 end if
 
+dead = .false.
+d%frame = 0
+
+io = load_colormap(s%fcolormap//nullc, s%colormap//nullc)
+if (io /= 0) call exit(ERR_COLORMAP)
+
 if (s%wrt) then
 
 	if (s%xmin >= s%xmax .or. s%ymin >= s%ymax) then
@@ -1028,22 +1034,17 @@ g0 = g
 !!  Convert input to rle for convenience
 !call writerle(trim(filepre)//'_rle.rle', g)
 
-io = load_colormap(s%fcolormap//nullc, s%colormap//nullc)
-if (io /= 0) call exit(ERR_COLORMAP)
-
 ! Time loop
-dead = .false.
-d%frame = 0
 do while (d%frame < s%n .and. .not. dead)
 
 	! Switch roles of g and g0 every other frame
 
 	d%frame = d%frame + 1
-	if (s%wrt) write(*,*) 'Frame ', d%frame
+	if (.not. s%wrt) write(*,*) 'Frame ', d%frame
 	call nextgen(s, dead, g0, g, d, niminmin, njminmin, nimaxmax, njmaxmax)
 
 	d%frame = d%frame + 1
-	if (s%wrt) write(*,*) 'Frame ', d%frame
+	if (.not. s%wrt) write(*,*) 'Frame ', d%frame
 	call nextgen(s, dead, g, g0, d, niminmin, njminmin, nimaxmax, njmaxmax)
 
 end do
