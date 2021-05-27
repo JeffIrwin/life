@@ -18,7 +18,8 @@ jobs:
         sudo apt-get install gfortran
     - if: matrix.os == 'macOS-latest'
       run: |
-        brew install gcc | brew reinstall gcc
+        brew install gcc
+        brew reinstall gcc
     - name: Clean, build, and test
       run: |
         git submodule update --init --recursive
