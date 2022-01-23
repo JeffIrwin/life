@@ -12,15 +12,25 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
+
     - uses: actions/checkout@v1
+
     - if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get install gfortran
+
     - if: matrix.os == 'macOS-latest'
       run: |
         brew install gcc
+
     - name: Clean, build, and test
       run: |
         git submodule update --init --recursive
         bash ./test.sh
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: factory-0-0-1
+        path: inputs/frames/factory_100.pbm
 
